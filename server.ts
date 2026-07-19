@@ -67,16 +67,44 @@ function verifyToken(token: string): UserAccount | null {
 }
 
 
+// Check if the current API Key is supported for developer API requests (e.g. not an AQ. OAuth token)
+function isApiKeySupported(): boolean {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return false;
+  if (apiKey.startsWith("AQ.")) return false;
+  if (apiKey === "invalid_key" || apiKey === "placeholder") return false;
+  return true;
+}
+
+
 // Lazy initializer for Google GenAI client
 let genAIClient: any = null;
 function getGenAI() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
+    fs.appendFileSync("./auth-debug.log", `${new Date().toISOString()} - GEMINI_API_KEY is missing!\n`);
     return null;
   }
+  
+  const debugMsg = `${new Date().toISOString()} - Key length: ${apiKey.length}, Prefix: ${apiKey.substring(0, 8)}, GOOGLE_APPLICATION_CREDENTIALS present: ${!!process.env.GOOGLE_APPLICATION_CREDENTIALS}, GOOGLE_CLOUD_PROJECT: ${process.env.GOOGLE_CLOUD_PROJECT}\n`;
+  fs.appendFileSync("./auth-debug.log", debugMsg);
+  
   if (!genAIClient) {
+    // Explicitly delete standard Google Cloud Platform environment variables to prevent 
+    // @google/genai SDK from detecting GCP environment credentials / Application Default Credentials (ADC)
+    // and using Vertex AI or attempting to generate an OAuth Bearer token, which results in
+    // ACCESS_TOKEN_TYPE_UNSUPPORTED/401 unauthenticated errors.
+    delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    delete process.env.GOOGLE_GHA_CREDS_PATH;
+    delete process.env.GCP_PROJECT;
+    delete process.env.GOOGLE_CLOUD_PROJECT;
+    delete process.env.GCLOUD_PROJECT;
+    delete process.env.GOOGLE_GENAI_USE_VERTEXAI;
+
     genAIClient = new GoogleGenAI({
       apiKey: apiKey,
+      vertexai: false,
+      enterprise: false,
       httpOptions: {
         headers: {
           "User-Agent": "aistudio-build",
@@ -383,10 +411,9 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Messages array is required." });
     }
 
-    const ai = getGenAI();
     const selectedModel = model === "gemini-pro" ? "gemini-3.1-pro-preview" : "gemini-3.5-flash";
 
-    if (!ai) {
+    if (!isApiKeySupported()) {
       // Offline Simulation Mode when API key is missing
       const lastUserMsg = messages[messages.length - 1]?.content || "";
       const lastUserImg = messages[messages.length - 1]?.image || "";
@@ -467,6 +494,11 @@ How can I help you today? You can ask me about:
 
       await new Promise((resolve) => setTimeout(resolve, simulatedDelay));
       return res.json({ text: answer });
+    }
+
+    const ai = getGenAI();
+    if (!ai) {
+      return res.status(400).json({ error: "GEMINI_API_KEY environment variable is not defined. Please configure it in your Settings > Secrets panel." });
     }
 
     // Prepare contents for @google/genai SDK
@@ -561,9 +593,10 @@ How can I help you today? You can ask me about:
 
     return res.json({ text: response.text });
   } catch (err: any) {
-    console.info(`[Aetrix AI System Info] Failover system initialized: ${err.message || "rate limit limiters active"}`);
+    console.warn("[Aetrix AI Failover Active] Gemini API Error in /api/chat:", err.message || err);
     
-    // Fallback to offline simulation mode on API error (e.g. quota limit, bad key, network issue)
+    // Seamless fallback to high-fidelity simulated offline mode on API errors
+    // (e.g. invalid keys starting with AQ., API disabled, quota issues, etc.)
     const lastUserMsg = req.body.messages[req.body.messages.length - 1]?.content || "";
     const lastUserImg = req.body.messages[req.body.messages.length - 1]?.image || "";
     const lastUserImgName = req.body.messages[req.body.messages.length - 1]?.imageName || "asset.png";
@@ -739,8 +772,7 @@ app.post("/api/generate-image", async (req, res) => {
       return res.status(400).json({ error: "Prompt is required." });
     }
 
-    const ai = getGenAI();
-    if (!ai) {
+    if (!isApiKeySupported()) {
       // Return a simulated premium futuristic image (a gorgeous high-tech base64 placeholder)
       await new Promise((resolve) => setTimeout(resolve, 2000));
       
@@ -784,6 +816,11 @@ app.post("/api/generate-image", async (req, res) => {
       return res.json({ imageUrl, simulated: true });
     }
 
+    const ai = getGenAI();
+    if (!ai) {
+      return res.status(400).json({ error: "GEMINI_API_KEY environment variable is not defined. Please configure it in your Settings > Secrets panel to use real image generation." });
+    }
+
     // Call real image generation model
     // Using gemini-3.1-flash-lite-image by default
     const response = await ai.models.generateContent({
@@ -813,9 +850,9 @@ app.post("/api/generate-image", async (req, res) => {
 
     return res.json({ imageUrl });
   } catch (err: any) {
-    console.info(`[Aetrix AI System Info] Image generation fallback activated: ${err.message || "quota bounds active"}`);
+    console.warn("[Aetrix AI Failover Active] Gemini API Error in /api/generate-image:", err.message || err);
     
-    // Robust fallback to high-fidelity simulated SVG to bypass API errors (quota exceeded)
+    // Robust fallback to high-fidelity simulated SVG to bypass API errors (quota exceeded/invalid key)
     const simulatedSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
       <rect width="800" height="500" fill="#050505"/>
       <defs>
@@ -861,10 +898,9 @@ app.post("/api/summarize-pdf", async (req, res) => {
   try {
     const { pdfName, pdfSize, mockText } = req.body;
     
-    const ai = getGenAI();
     let summaryPrompt = `Please summarize this document: "${pdfName}" (Size: ${pdfSize}). Key extractable content or description: ${mockText || "This is a machine learning blueprint outlining core neural activation pathways and futuristic server-side structures."}`;
     
-    if (!ai) {
+    if (!isApiKeySupported()) {
       await new Promise((resolve) => setTimeout(resolve, 1800));
       return res.json({
         summary: `### Document Executive Summary: **${pdfName}**
@@ -880,6 +916,11 @@ This research indicates a paradigm shift towards lightweight cognitive workspace
       });
     }
 
+    const ai = getGenAI();
+    if (!ai) {
+      return res.status(400).json({ error: "GEMINI_API_KEY environment variable is not defined. Please configure it in your Settings > Secrets panel to use real PDF summarization." });
+    }
+
     const response = await generateContentWithFallback(ai, {
       model: "gemini-3.5-flash",
       contents: summaryPrompt,
@@ -890,7 +931,7 @@ This research indicates a paradigm shift towards lightweight cognitive workspace
 
     return res.json({ summary: response.text });
   } catch (err: any) {
-    console.info(`[Aetrix AI System Info] PDF summarizer failover activated: ${err.message || "quota limit reached"}`);
+    console.warn("[Aetrix AI Failover Active] Gemini API Error in /api/summarize-pdf:", err.message || err);
     
     // Return high fidelity technical fallback summary
     return res.json({

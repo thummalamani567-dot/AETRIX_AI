@@ -848,6 +848,34 @@ export default function AetrixChatWorkspace({
       }
     } catch (err: any) {
       console.error(err);
+      
+      const errorMsg: Message = {
+        id: "ai-" + Date.now() + "-" + Math.floor(Math.random() * 1000000),
+        role: "assistant",
+        content: `### ⚠️ API Connection Error
+
+We encountered an error attempting to process your neural stream query. 
+
+**Error Details**:
+\`\`\`text
+${err.message || "An unexpected error occurred while communicating with the server."}
+\`\`\`
+
+**Troubleshooting Steps**:
+1. Verify that your **GEMINI_API_KEY** is defined in your platform environment or AI Studio secrets panel.
+2. Check your network connection.
+3. If the error is a quota limit (429), please wait a moment before trying again.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      };
+
+      setMessages((prev) => {
+        const updatedAll = [...prev, errorMsg];
+        updateConversationStateAndStorage(convId!, title, updatedAll);
+        return updatedAll;
+      });
+      setIsLoading(false);
+      return;
+
       // Premium elegant inline offline simulation fallback
       setTimeout(() => {
         let fallbackContent = `### Aetrix AI Intelligence Response\n\nI processed your request`;

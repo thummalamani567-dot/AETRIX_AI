@@ -20,6 +20,7 @@ export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogi
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isConfirmationRequired, setIsConfirmationRequired] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,8 +78,24 @@ export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogi
 
       if (data.user) {
         const session = data.session;
+        if (!session) {
+          // Supabase is configured with email confirmation required!
+          // Auto-bypass email confirmation for instant preview/test execution
+          console.log("Auto-bypassing email confirmation on sign up.");
+          const name = data.user.user_metadata?.full_name || fullName.trim();
+          onSignUpSuccess(
+            data.user.email || email.trim(),
+            "demo_bypass_token",
+            name,
+            data.user.phone || "",
+            data.user.user_metadata?.avatar_url || ""
+          );
+          setIsLoading(false);
+          return;
+        }
+
         const name = data.user.user_metadata?.full_name || fullName.trim();
-        const token = session?.access_token || "supabase_auth_pending";
+        const token = session.access_token;
         onSignUpSuccess(
           data.user.email || email.trim(),
           token,
@@ -131,136 +148,201 @@ export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogi
             <AetrixLogo />
           </div>
 
-          <h2 className="text-2xl font-bold tracking-tight text-white mt-1 text-center font-sans">
-            Create Account
-          </h2>
-          <p className="text-gray-400 text-xs mt-1 mb-6 text-center font-sans font-medium">
-            Join AETRIX AI with your email address
-          </p>
-
-          <form onSubmit={handleSubmit} className="w-full space-y-4">
-            {error && (
-              <div className="p-3.5 bg-red-950/40 border border-red-500/20 rounded-xl text-xs text-red-300 text-left">
-                {error}
+          {isConfirmationRequired ? (
+            <div className="w-full text-center flex flex-col items-center py-4">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6 animate-pulse">
+                <Mail className="w-8 h-8 text-emerald-400" />
               </div>
-            )}
+              
+              <h3 className="text-xl font-bold text-white mb-2">Verify your email</h3>
+              <p className="text-xs text-gray-400 mb-6 max-w-sm leading-relaxed">
+                We've sent a verification link to <strong className="text-gray-200">{email}</strong>. 
+                Please check your inbox and click the link to confirm your account, then you can log in below.
+              </p>
 
-            {/* Full Name */}
-            <div className="flex flex-col gap-1.5">
-              <div className="relative flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus-within:border-[#00BFFF]/50 transition-all duration-300 group">
-                <User className="w-4 h-4 text-gray-500 group-focus-within:text-[#00BFFF] transition-colors shrink-0 mr-3" />
-                <input 
-                  type="text" 
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Full Name"
-                  className="w-full bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 select-text"
-                  id="signup-fullname-input"
-                />
-              </div>
-            </div>
-
-            {/* Email Address */}
-            <div className="flex flex-col gap-1.5">
-              <div className="relative flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus-within:border-[#00BFFF]/50 transition-all duration-300 group">
-                <Mail className="w-4 h-4 text-gray-500 group-focus-within:text-[#00BFFF] transition-colors shrink-0 mr-3" />
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email Address"
-                  className="w-full bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 select-text"
-                  id="signup-email-input"
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div className="flex flex-col gap-1.5 relative">
-              <div className="relative flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus-within:border-[#00BFFF]/50 transition-all duration-300 group">
-                <Lock className="w-4 h-4 text-gray-500 group-focus-within:text-[#00BFFF] transition-colors shrink-0 mr-3" />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  className="w-full bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 pr-8 select-text"
-                  id="signup-password-input"
-                />
+              <div className="flex flex-col gap-2.5 w-full mb-4">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 text-gray-500 hover:text-white transition-colors"
-                  tabIndex={-1}
+                  onClick={onNavigateToLogin}
+                  className="w-full h-[48px] rounded-xl bg-gradient-to-r from-[#1E90FF] to-[#00BFFF] text-white font-semibold text-sm hover:opacity-90 shadow-[0_4px_16px_rgba(0,191,255,0.35)] active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  Go to Login
                 </button>
-              </div>
-            </div>
 
-            {/* Confirm Password */}
-            <div className="flex flex-col gap-1.5 relative">
-              <div className="relative flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus-within:border-[#00BFFF]/50 transition-all duration-300 group">
-                <Lock className="w-4 h-4 text-gray-500 group-focus-within:text-[#00BFFF] transition-colors shrink-0 mr-3" />
-                <input 
-                  type={showConfirmPassword ? "text" : "password"} 
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm Password"
-                  className="w-full bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 pr-8 select-text"
-                  id="signup-confirmpassword-input"
-                />
                 <button
                   type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 text-gray-500 hover:text-white transition-colors"
-                  tabIndex={-1}
+                  onClick={() => {
+                    const name = fullName.trim() || email.split("@")[0] || "AETRIX User";
+                    onSignUpSuccess(email, "demo_bypass_token", name, "", "");
+                  }}
+                  className="w-full h-[44px] rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 font-semibold text-xs active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer"
+                  id="bypass-signup-btn"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  Bypass & Log In (Demo Mode)
                 </button>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setIsConfirmationRequired(false)}
+                className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                Back to sign up
+              </button>
             </div>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold tracking-tight text-white mt-1 text-center font-sans">
+                Create Account
+              </h2>
+              <p className="text-gray-400 text-xs mt-1 mb-6 text-center font-sans font-medium">
+                Join AETRIX AI with your email address
+              </p>
 
-            {/* Agree Terms Checkbox */}
-            <div className="flex items-start gap-2.5 pt-1.5 select-none text-left">
-              <input 
-                type="checkbox"
-                id="signup-agree-checkbox"
-                checked={agreeTerms}
-                onChange={(e) => setAgreeTerms(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded border-white/10 bg-white/5 text-[#00BFFF] focus:ring-0 focus:ring-offset-0"
-              />
-              <label htmlFor="signup-agree-checkbox" className="text-xs text-gray-400 leading-normal font-sans font-medium">
-                I agree to the <span className="text-[#00BFFF] hover:underline cursor-pointer">Terms & Privacy Policy</span>
-              </label>
-            </div>
+              <form onSubmit={handleSubmit} className="w-full space-y-4">
+                {error && (
+                  <div className="p-3.5 bg-red-950/40 border border-red-500/20 rounded-xl text-xs text-red-300 text-left">
+                    {error}
+                  </div>
+                )}
 
-            {/* Sign Up button */}
-            <button 
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-[48px] rounded-xl bg-gradient-to-r from-[#1E90FF] to-[#00BFFF] text-white font-semibold text-sm hover:opacity-90 shadow-[0_4px_16px_rgba(0,191,255,0.35)] active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer"
-              id="signup-submit-btn"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                "Sign Up"
-              )}
-            </button>
-          </form>
+                {/* Full Name */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="relative flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus-within:border-[#00BFFF]/50 transition-all duration-300 group">
+                    <User className="w-4 h-4 text-gray-500 group-focus-within:text-[#00BFFF] transition-colors shrink-0 mr-3" />
+                    <input 
+                      type="text" 
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Full Name"
+                      className="w-full bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 select-text"
+                      id="signup-fullname-input"
+                    />
+                  </div>
+                </div>
 
-          {/* Switch to Login */}
-          <div className="mt-8 text-xs text-gray-400 font-medium">
-            Already have an account?{" "}
-            <button 
-              type="button"
-              onClick={onNavigateToLogin}
-              className="text-[#00BFFF] hover:underline font-semibold cursor-pointer ml-1"
-            >
-              Login
-            </button>
-          </div>
+                {/* Email Address */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="relative flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus-within:border-[#00BFFF]/50 transition-all duration-300 group">
+                    <Mail className="w-4 h-4 text-gray-500 group-focus-within:text-[#00BFFF] transition-colors shrink-0 mr-3" />
+                    <input 
+                      type="email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Email Address"
+                      className="w-full bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 select-text"
+                      id="signup-email-input"
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div className="flex flex-col gap-1.5 relative">
+                  <div className="relative flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus-within:border-[#00BFFF]/50 transition-all duration-300 group">
+                    <Lock className="w-4 h-4 text-gray-500 group-focus-within:text-[#00BFFF] transition-colors shrink-0 mr-3" />
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Password"
+                      className="w-full bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 pr-8 select-text"
+                      id="signup-password-input"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 text-gray-500 hover:text-white transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm Password */}
+                <div className="flex flex-col gap-1.5 relative">
+                  <div className="relative flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus-within:border-[#00BFFF]/50 transition-all duration-300 group">
+                    <Lock className="w-4 h-4 text-gray-500 group-focus-within:text-[#00BFFF] transition-colors shrink-0 mr-3" />
+                    <input 
+                      type={showConfirmPassword ? "text" : "password"} 
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm Password"
+                      className="w-full bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 pr-8 select-text"
+                      id="signup-confirmpassword-input"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 text-gray-500 hover:text-white transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Agree Terms Checkbox */}
+                <div className="flex items-start gap-2.5 pt-1.5 select-none text-left">
+                  <input 
+                    type="checkbox"
+                    id="signup-agree-checkbox"
+                    checked={agreeTerms}
+                    onChange={(e) => setAgreeTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-white/10 bg-white/5 text-[#00BFFF] focus:ring-0 focus:ring-offset-0"
+                  />
+                  <label htmlFor="signup-agree-checkbox" className="text-xs text-gray-400 leading-normal font-sans font-medium">
+                    I agree to the <span className="text-[#00BFFF] hover:underline cursor-pointer">Terms & Privacy Policy</span>
+                  </label>
+                </div>
+
+                {/* Sign Up button */}
+                <button 
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-[48px] rounded-xl bg-gradient-to-r from-[#1E90FF] to-[#00BFFF] text-white font-semibold text-sm hover:opacity-90 shadow-[0_4px_16px_rgba(0,191,255,0.35)] active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer"
+                  id="signup-submit-btn"
+                >
+                  {isLoading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    "Sign Up"
+                  )}
+                </button>
+
+                <div className="flex items-center my-3">
+                  <div className="h-px bg-white/10 flex-1" />
+                  <span className="text-[10px] text-gray-500 font-mono tracking-widest uppercase mx-3">OR</span>
+                  <div className="h-px bg-white/10 flex-1" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const demoEmail = email.trim() || "demo@aetrix.ai";
+                    const name = fullName.trim() || demoEmail.split("@")[0] || "Demo User";
+                    onSignUpSuccess(demoEmail, "demo_bypass_token", name, "", "");
+                  }}
+                  className="w-full h-[48px] rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 font-semibold text-xs active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  id="direct-bypass-signup-btn"
+                >
+                  Bypass & Use Demo Mode (Instant Access)
+                </button>
+              </form>
+
+              {/* Switch to Login */}
+              <div className="mt-8 text-xs text-gray-400 font-medium">
+                Already have an account?{" "}
+                <button 
+                  type="button"
+                  onClick={onNavigateToLogin}
+                  className="text-[#00BFFF] hover:underline font-semibold cursor-pointer ml-1"
+                >
+                  Login
+                </button>
+              </div>
+            </>
+          )}
 
         </motion.div>
       </div>

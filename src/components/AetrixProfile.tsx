@@ -10,6 +10,7 @@ interface AetrixProfileProps {
   userEmail: string;
   userName: string;
   userAvatar?: string;
+  profilesTableMissing?: boolean;
   onBack: () => void;
   onLogout: () => void;
   onNavigateToSettings: () => void;
@@ -22,6 +23,7 @@ export default function AetrixProfile({
   userEmail, 
   userName, 
   userAvatar,
+  profilesTableMissing = false,
   onBack, 
   onLogout, 
   onNavigateToSettings,
@@ -331,6 +333,44 @@ export default function AetrixProfile({
             <span>Edit Profile</span>
           </button>
         </div>
+
+        {profilesTableMissing && (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-3xl p-5 space-y-4 shadow-xl text-left" id="profiles-missing-warning">
+            <div className="flex gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+                <Database className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-amber-300">Supabase Setup Action Required</h4>
+                <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                  The <code className="text-amber-200">profiles</code> database table or <code className="text-amber-200 text-xs">avatars</code> storage bucket was not found in your Supabase project. To resolve this automatically, please copy the migration script below and paste it into your Supabase SQL Editor.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(`-- Create profiles table\ncreate table if not exists public.profiles (\n  id uuid references auth.users on delete cascade primary key,\n  full_name text,\n  avatar_url text,\n  updated_at timestamp with time zone default timezone('utc'::text, now()) not null\n);\n\nalter table public.profiles enable row level security;\n\ncreate policy "Public profiles are viewable by everyone." on public.profiles for select using (true);\ncreate policy "Users can insert their own profile." on public.profiles for insert with check (auth.uid() = id);\ncreate policy "Users can update their own profile." on public.profiles for update using (auth.uid() = id);\n\ncreate or replace function public.handle_new_user()\nreturns trigger as $$\nbegin\n  insert into public.profiles (id, full_name, avatar_url, updated_at)\n  values (new.id, coalesce(new.raw_user_metadata->>'full_name', ''), coalesce(new.raw_user_metadata->>'avatar_url', ''), now());\n  return new;\nend;\n$$ language plpgsql security definer;\n\ndrop trigger if exists on_auth_user_created on auth.users;\ncreate trigger on_auth_user_created after insert on auth.users for each row execute procedure public.handle_new_user();\n\ninsert into storage.buckets (id, name, public) values ('avatars', 'avatars', true) on conflict (id) do nothing;\nalter table storage.objects enable row level security;\ncreate policy "Avatar images are publicly accessible." on storage.objects for select using (bucket_id = 'avatars');\ncreate policy "Anyone can upload an avatar." on storage.objects for insert with check (bucket_id = 'avatars');\ncreate policy "Anyone can update their own avatar." on storage.objects for update using (bucket_id = 'avatars');`);
+                  addToast("SQL schema copied to clipboard!", "success");
+                }}
+                className="px-3.5 py-2 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold hover:bg-amber-500/30 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Copy Setup SQL</span>
+              </button>
+              <a
+                href="https://supabase.com/dashboard"
+                target="_blank"
+                rel="noreferrer"
+                className="px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-xs font-semibold hover:bg-white/10 transition-all cursor-pointer flex items-center gap-1"
+              >
+                <span>Open Supabase Console</span>
+                <Globe className="w-3.5 h-3.5 text-gray-400" />
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* Section Heading */}
         <div className="flex items-center gap-2 px-1">

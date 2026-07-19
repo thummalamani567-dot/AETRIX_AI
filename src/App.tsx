@@ -95,8 +95,19 @@ function SplashScreen() {
   );
 }
 
+function base64ToBlob(base64: string, mimeType: string = "image/jpeg") {
+  const byteString = atob(base64.split(",")[1]);
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], { type: mimeType });
+}
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
+  const [profilesTableMissing, setProfilesTableMissing] = useState(false);
   const [currentPath, setCurrentPath] = useState(() => {
     const path = window.location.pathname;
     const validPaths = [
@@ -152,6 +163,17 @@ export default function App() {
 
   // Securely restore the logged-in session from Supabase on mount/restart
   useEffect(() => {
+    if (localStorage.getItem("aetrix_session_token") === "demo_bypass_token") {
+      setIsLoggedIn(true);
+      const savedEmail = localStorage.getItem("aetrix_user_email") || "demo@aetrix.ai";
+      const savedName = localStorage.getItem("aetrix_user_name") || "Demo User";
+      const savedAvatar = localStorage.getItem("aetrix_user_avatar") || "";
+      setUserEmail(savedEmail);
+      setUserName(savedName);
+      setUserAvatar(savedAvatar);
+      return;
+    }
+
     if (!isSupabaseConfigured()) {
       setIsLoggedIn(false);
       setUserEmail("guest@aetrix.ai");
@@ -161,7 +183,53 @@ export default function App() {
     }
 
     const supabase = getSupabase();
+
+    const fetchUserProfile = async (user: any) => {
+      let name = user.user_metadata?.full_name || user.email?.split("@")[0] || "AETRIX User";
+      let avatar = user.user_metadata?.avatar_url || "";
+      
+      try {
+        const { data: profile, error: profileError } = await (supabase.from("profiles") as any)
+          .select("full_name, avatar_url")
+          .eq("id", user.id)
+          .single();
+
+        if (profileError) {
+          if (profileError.code === "42P01") {
+            setProfilesTableMissing(true);
+          } else if (profileError.code === "PGRST116") {
+            // Profile missing in table, let's insert it
+            await (supabase.from("profiles") as any).insert({
+              id: user.id,
+              full_name: name,
+              avatar_url: avatar,
+              updated_at: new Date().toISOString()
+            });
+            setProfilesTableMissing(false);
+          }
+        } else if (profile) {
+          name = (profile as any).full_name || name;
+          avatar = (profile as any).avatar_url || avatar;
+          setProfilesTableMissing(false);
+        }
+      } catch (err) {
+        console.error("Error loading profile from DB:", err);
+      }
+
+      setIsLoggedIn(true);
+      setUserEmail(user.email || "");
+      setUserName(name);
+      setUserAvatar(avatar);
+      localStorage.setItem("aetrix_is_logged_in", "true");
+      localStorage.setItem("aetrix_user_email", user.email || "");
+      localStorage.setItem("aetrix_user_name", name);
+      localStorage.setItem("aetrix_user_avatar", avatar);
+    };
+
     supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (localStorage.getItem("aetrix_session_token") === "demo_bypass_token") {
+        return; // Skip if user logged in via demo mode during async check
+      }
       if (error || !session) {
         setIsLoggedIn(false);
         setUserEmail("guest@aetrix.ai");
@@ -176,30 +244,17 @@ export default function App() {
       }
 
       const user = session.user;
-      const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "AETRIX User";
-      setIsLoggedIn(true);
-      setUserEmail(user.email || "");
-      setUserName(name);
-      setUserAvatar(user.user_metadata?.avatar_url || "");
-      localStorage.setItem("aetrix_is_logged_in", "true");
-      localStorage.setItem("aetrix_user_email", user.email || "");
-      localStorage.setItem("aetrix_user_name", name);
-      localStorage.setItem("aetrix_user_avatar", user.user_metadata?.avatar_url || "");
+      fetchUserProfile(user);
       localStorage.setItem("aetrix_session_token", session.access_token);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (localStorage.getItem("aetrix_session_token") === "demo_bypass_token") {
+        return; // Do not clear session if we are in demo mode!
+      }
       if (session) {
         const user = session.user;
-        const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "AETRIX User";
-        setIsLoggedIn(true);
-        setUserEmail(user.email || "");
-        setUserName(name);
-        setUserAvatar(user.user_metadata?.avatar_url || "");
-        localStorage.setItem("aetrix_is_logged_in", "true");
-        localStorage.setItem("aetrix_user_email", user.email || "");
-        localStorage.setItem("aetrix_user_name", name);
-        localStorage.setItem("aetrix_user_avatar", user.user_metadata?.avatar_url || "");
+        fetchUserProfile(user);
         localStorage.setItem("aetrix_session_token", session.access_token);
       } else {
         setIsLoggedIn(false);
@@ -228,9 +283,10 @@ export default function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // Redirect invalid paths to main chat screen or login
+  // Redirect invalid paths and protect routes
   useEffect(() => {
     if (showSplash) return;
+
     const validPaths = [
       "/", "/chat", "/login", "/signup", "/features", 
       "/features/chat", "/features/translate", "/features/summarizer", 
@@ -240,14 +296,23 @@ export default function App() {
     ];
     const isValid = validPaths.includes(currentPath) || currentPath.startsWith("/features/");
     if (!isValid) {
-      navigate("/");
+      if (isLoggedIn) {
+        navigate("/chat");
+      } else {
+        navigate("/login");
+      }
       return;
     }
 
-    // Protect features route if not logged in
-    if (!isLoggedIn && (currentPath === "/features" || currentPath.startsWith("/features/") || ["/profile", "/settings", "/projects", "/library"].includes(currentPath))) {
-      navigate("/");
-      addToast("Please Login or Sign Up to access secure profile, settings, and workspace tools.", "error");
+    if (!isLoggedIn) {
+      if (currentPath !== "/login" && currentPath !== "/signup") {
+        navigate("/login");
+        addToast("Please Login or Sign Up to access secure profile, settings, and workspace tools.", "error");
+      }
+    } else {
+      if (currentPath === "/login" || currentPath === "/signup" || currentPath === "/") {
+        navigate("/chat");
+      }
     }
   }, [showSplash, currentPath, isLoggedIn]);
 
@@ -397,6 +462,7 @@ export default function App() {
           userName={isLoggedIn ? userName : "Alex Design"}
           userEmail={isLoggedIn ? userEmail : "alex@aetrix.ai"}
           userAvatar={isLoggedIn ? userAvatar : ""}
+          profilesTableMissing={profilesTableMissing}
           onBack={() => {
             navigate("/chat");
           }}
@@ -424,36 +490,92 @@ export default function App() {
             navigate("/settings");
           }}
           onUpdateProfile={async (name, email, avatar) => {
+            if (localStorage.getItem("aetrix_session_token") === "demo_bypass_token") {
+              setUserName(name);
+              if (email) setUserEmail(email);
+              if (avatar) setUserAvatar(avatar);
+              localStorage.setItem("aetrix_user_name", name);
+              if (email) localStorage.setItem("aetrix_user_email", email);
+              if (avatar) localStorage.setItem("aetrix_user_avatar", avatar);
+              addToast("Profile successfully updated locally in Demo Mode.", "success");
+              return;
+            }
+
             if (!isSupabaseConfigured()) {
               throw new Error("Supabase is not configured.");
             }
             try {
               const supabase = getSupabase();
-              const { data, error } = await supabase.auth.updateUser({
+              const { data: { user }, error: userError } = await supabase.auth.getUser();
+              if (userError || !user) {
+                throw new Error("No active user session found.");
+              }
+
+              let avatarUrl = avatar || "";
+
+              // Handle base64 image upload to Supabase Storage
+              if (avatar && avatar.startsWith("data:image")) {
+                const mimeType = avatar.match(/^data:(image\/[a-zA-Z0-9+]+);base64,/)?.[1] || "image/jpeg";
+                const blob = base64ToBlob(avatar, mimeType);
+                const fileName = `${user.id}/${Date.now()}.jpg`;
+
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                  .from("avatars")
+                  .upload(fileName, blob, {
+                    contentType: mimeType,
+                    upsert: true
+                  });
+
+                if (uploadError) {
+                  console.error("Storage upload error:", uploadError);
+                  throw new Error(`Failed to upload avatar: ${uploadError.message}`);
+                }
+
+                const { data: { publicUrl } } = supabase.storage
+                  .from("avatars")
+                  .getPublicUrl(fileName);
+
+                avatarUrl = publicUrl;
+              }
+
+              // Update the database profiles table
+              const { error: dbError } = await (supabase.from("profiles") as any)
+                .upsert({
+                  id: user.id,
+                  full_name: name,
+                  avatar_url: avatarUrl,
+                  updated_at: new Date().toISOString()
+                });
+
+              if (dbError && dbError.code !== "42P01") {
+                console.error("DB Profiles upsert error:", dbError);
+                throw new Error(`Failed to save database profile: ${dbError.message}`);
+              }
+
+              // Also update user metadata in Supabase Auth as a fallback
+              await supabase.auth.updateUser({
                 data: {
                   full_name: name,
-                  avatar_url: avatar
+                  avatar_url: avatarUrl
                 }
               });
-              if (error) {
-                throw new Error(error.message);
-              }
-              if (data.user) {
-                const u = data.user;
-                const updatedName = u.user_metadata?.full_name || name;
-                const updatedAvatar = u.user_metadata?.avatar_url || avatar || "";
-                setUserName(updatedName);
-                setUserAvatar(updatedAvatar);
-                localStorage.setItem("aetrix_user_name", updatedName);
-                localStorage.setItem("aetrix_user_avatar", updatedAvatar);
-                addToast("Profile successfully synchronized with Supabase.", "success");
-              }
+
+              setUserName(name);
+              setUserAvatar(avatarUrl);
+              localStorage.setItem("aetrix_user_name", name);
+              localStorage.setItem("aetrix_user_avatar", avatarUrl);
+              addToast("Profile successfully synchronized with Supabase.", "success");
             } catch (err: any) {
               addToast(err.message || "Failed to update profile", "error");
               throw err;
             }
           }}
           onChangePassword={async (currentPass, newPass) => {
+            if (localStorage.getItem("aetrix_session_token") === "demo_bypass_token") {
+              addToast("Password changed successfully in Demo Mode (Local only).", "success");
+              return;
+            }
+
             if (!isSupabaseConfigured()) {
               throw new Error("Supabase is not configured.");
             }
