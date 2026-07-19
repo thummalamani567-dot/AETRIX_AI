@@ -1,0 +1,6 @@
+{
+  "name": "Aetrix AI",
+  "description": "A premium futuristic assistant login and sign-up portal with high-fidelity glow animations and background effects.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

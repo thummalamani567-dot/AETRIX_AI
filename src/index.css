@@ -1,0 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+}
+
+/* Custom premium glow keyframes and utility animations */
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(30, 144, 255, 0.15), inset 0 0 10px rgba(30, 144, 255, 0.1);
+    border-color: rgba(30, 144, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(30, 144, 255, 0.35), inset 0 0 15px rgba(30, 144, 255, 0.25);
+    border-color: rgba(30, 144, 255, 0.5);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%) translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
+}
+
+.premium-glass-card {
+  background: rgba(4, 6, 12, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(30, 144, 255, 0.15);
+  box-shadow: 0 0 40px rgba(30, 144, 255, 0.08), inset 0 0 1px rgba(255, 255, 255, 0.05);
+  animation: neon-pulse 6s ease-in-out infinite;
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(30, 144, 255, 0.3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(30, 144, 255, 0.6);
+}
+
+/* Streaming and thinking wave-flow animations */
+@keyframes wave-flow {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes pulse-cyber-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.4;
+    filter: drop-shadow(0 0 2px #1E90FF);
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 1;
+    filter: drop-shadow(0 0 8px #00BFFF);
+  }
+}
+
+.animate-cyber-dot-1 {
+  animation: pulse-cyber-dot 1.2s ease-in-out infinite;
+}
+.animate-cyber-dot-2 {
+  animation: pulse-cyber-dot 1.2s ease-in-out infinite 0.2s;
+}
+.animate-cyber-dot-3 {
+  animation: pulse-cyber-dot 1.2s ease-in-out infinite 0.4s;
+}
+
+.cyber-wave-path {
+  stroke-dasharray: 20 10;
+  animation: wave-flow 4s linear infinite;
+}
+
+/* Glassmorphic input bar glow */
+.glass-input-glow {
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(30, 144, 255, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(30, 144, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.glass-input-glow:focus-within {
+  border-color: rgba(30, 144, 255, 0.7);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.7), 0 0 25px rgba(30, 144, 255, 0.3);
+}
+
