@@ -274,7 +274,7 @@ export default function AetrixFeaturesPage({ onBack, onSelectTool, userName = "A
       {/* Ultra-premium interactive animated space background */}
       <PremiumSpaceBackground />
 
-      <div className="max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] w-full mx-auto px-4 sm:px-6 md:px-8 py-8 pb-20 relative z-10 animate-fade-in">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-8 pb-20 relative z-10">
         
         {/* Header Bar */}
         <header className="flex items-center justify-between mb-8" id="features-header">

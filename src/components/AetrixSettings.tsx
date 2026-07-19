@@ -60,7 +60,7 @@ export default function AetrixSettings({ onBack, addToast, userEmail, onLogout, 
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-2xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl w-full mx-auto px-5 py-8 relative z-20 space-y-7 pb-24 animate-fade-in">
+      <main className="flex-1 max-w-lg mx-auto w-full px-5 py-8 relative z-20 space-y-7 pb-24">
         
         {/* Header Title */}
         <div className="text-center space-y-1">

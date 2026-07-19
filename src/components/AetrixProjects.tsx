@@ -98,7 +98,7 @@ export default function AetrixProjects({ onBack, addToast }: AetrixProjectsProps
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-5xl lg:max-w-7xl xl:max-w-[90%] w-full mx-auto px-5 py-8 relative z-20 space-y-6 pb-24 animate-fade-in">
+      <main className="flex-1 max-w-lg mx-auto w-full px-5 py-8 relative z-20 space-y-6 pb-24">
         
         {/* Header Title */}
         <div className="text-center space-y-1">

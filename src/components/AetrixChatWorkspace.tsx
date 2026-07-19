@@ -1200,7 +1200,7 @@ export default function AetrixChatWorkspace({
       {/* ---------------------------------------------------- */}
       {/* MAIN CONTAINER (Screen 1 / 3 Layout) */}
       {/* ---------------------------------------------------- */}
-      <div className="flex-1 flex flex-col h-full bg-[#000000] relative overflow-hidden" id="aetrix-main-content">
+      <div className="flex-1 flex flex-col min-h-screen bg-[#000000] relative" id="aetrix-main-content">
         
         {/* Subtle grid background */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none" />
@@ -1225,7 +1225,7 @@ export default function AetrixChatWorkspace({
           </div>
 
           {/* Right ⋮ Button */}
-          <div className="relative">
+          <div className="relative lg:absolute lg:top-4 lg:right-6">
             <button 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="p-1.5 text-gray-300 hover:text-white transition-colors cursor-pointer"
@@ -1419,7 +1419,7 @@ export default function AetrixChatWorkspace({
             </div>
           ) : (
             /* ACTIVE CHAT AREA */
-            <div className="flex-1 flex flex-col gap-6 max-w-5xl lg:max-w-7xl xl:max-w-[92%] 2xl:max-w-[95%] w-full mx-auto pb-4" id="messages-list">
+            <div className="flex-1 flex flex-col gap-6 max-w-5xl w-full mx-auto pb-4" id="messages-list">
               {messages.map((msg) => {
                 const isUser = msg.role === "user";
                 return (
@@ -1578,7 +1578,7 @@ export default function AetrixChatWorkspace({
         {/* BOTTOM INPUT CONTAINER (Pictured in Screen 1 & 3) */}
         {/* ---------------------------------------------------- */}
         <footer className="p-4 sm:p-6 bg-gradient-to-t from-black via-black/90 to-transparent sticky bottom-0 z-20 select-none animate-fade-in" id="aetrix-bottom-input-pane">
-          <div className="max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto w-full">
+          <div className="max-w-3xl mx-auto">
             
             {/* Rounded grey-bordered container holding input & lower button list */}
             <div className="border border-white/10 bg-[#0c0c0e]/85 backdrop-blur-xl rounded-[24px] px-4 py-3 flex flex-col gap-2.5 shadow-[0_4px_24px_rgba(0,0,0,0.6)]" id="input-bar-glow">

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { ArrowLeft, User, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Lock, Eye, EyeOff, Mail } from "lucide-react";
 import { motion } from "motion/react";
 import AetrixLogo from "./AetrixLogo";
+import { getSupabase, isSupabaseConfigured } from "../supabase";
 
 interface AetrixLoginProps {
   onBack: () => void;
@@ -10,7 +11,7 @@ interface AetrixLoginProps {
 }
 
 export default function AetrixLogin({ onBack, onLoginSuccess, onNavigateToSignUp }: AetrixLoginProps) {
-  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -20,8 +21,13 @@ export default function AetrixLogin({ onBack, onLoginSuccess, onNavigateToSignUp
     e.preventDefault();
     setError("");
 
-    if (!fullName.trim()) {
-      setError("Please enter your Full Name.");
+    if (!isSupabaseConfigured()) {
+      setError("Supabase is not configured. Please define NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment variables.");
+      return;
+    }
+
+    if (!email.trim()) {
+      setError("Please enter your Email Address.");
       return;
     }
     if (!password) {
@@ -31,24 +37,35 @@ export default function AetrixLogin({ onBack, onLoginSuccess, onNavigateToSignUp
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, password })
+      const supabase = getSupabase();
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
       });
 
-      const data = await response.json();
-      setIsLoading(false);
-
-      if (!response.ok) {
-        setError(data.error || "Authentication failed.");
+      if (authError) {
+        setError(authError.message);
+        setIsLoading(false);
         return;
       }
 
-      onLoginSuccess(data.user.email, data.token, data.user.fullName, data.user.phone || "", data.user.avatar || "");
-    } catch (err) {
+      if (data.user && data.session) {
+        const user = data.user;
+        const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "AETRIX User";
+        onLoginSuccess(
+          user.email || "",
+          data.session.access_token,
+          name,
+          user.phone || "",
+          user.user_metadata?.avatar_url || ""
+        );
+      } else {
+        setError("Authentication succeeded but no active session was returned.");
+      }
       setIsLoading(false);
-      setError("Network error. Unable to contact authentication server.");
+    } catch (err: any) {
+      setIsLoading(false);
+      setError(err.message || "Network error. Unable to contact authentication server.");
     }
   };
 
@@ -91,7 +108,7 @@ export default function AetrixLogin({ onBack, onLoginSuccess, onNavigateToSignUp
             Welcome Back
           </h2>
           <p className="text-gray-400 text-xs mt-1 mb-6 text-center font-sans font-medium">
-            Sign in with your Full Name
+            Sign in with your email address
           </p>
 
           {/* Form states */}
@@ -103,17 +120,17 @@ export default function AetrixLogin({ onBack, onLoginSuccess, onNavigateToSignUp
                 </div>
               )}
 
-              {/* Full Name */}
+              {/* Email Address */}
               <div className="flex flex-col gap-1.5">
                 <div className="relative flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus-within:border-[#00BFFF]/50 transition-all duration-300 group">
-                  <User className="w-4 h-4 text-gray-500 group-focus-within:text-[#00BFFF] transition-colors shrink-0 mr-3" />
+                  <Mail className="w-4 h-4 text-gray-500 group-focus-within:text-[#00BFFF] transition-colors shrink-0 mr-3" />
                   <input 
-                    type="text" 
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Full Name"
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email Address"
                     className="w-full bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 select-text"
-                    id="login-fullname-input"
+                    id="login-email-input"
                   />
                 </div>
               </div>

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { ArrowLeft, User, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, User, Lock, Eye, EyeOff, Mail } from "lucide-react";
 import { motion } from "motion/react";
 import AetrixLogo from "./AetrixLogo";
+import { getSupabase, isSupabaseConfigured } from "../supabase";
 
 interface AetrixSignUpProps {
   onBack: () => void;
@@ -11,6 +12,7 @@ interface AetrixSignUpProps {
 
 export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogin }: AetrixSignUpProps) {
   const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -23,8 +25,17 @@ export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogi
     e.preventDefault();
     setError("");
 
+    if (!isSupabaseConfigured()) {
+      setError("Supabase is not configured. Please define NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment variables.");
+      return;
+    }
+
     if (!fullName.trim()) {
       setError("Please enter your Full Name.");
+      return;
+    }
+    if (!email.trim()) {
+      setError("Please enter your Email Address.");
       return;
     }
     if (!password) {
@@ -46,24 +57,42 @@ export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogi
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, password })
+      const supabase = getSupabase();
+      const { data, error: authError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+            avatar_url: "",
+          }
+        }
       });
 
-      const data = await response.json();
-      setIsLoading(false);
-
-      if (!response.ok) {
-        setError(data.error || "Registration failed. Please try again.");
+      if (authError) {
+        setError(authError.message);
+        setIsLoading(false);
         return;
       }
 
-      onSignUpSuccess(data.user.email, data.token, data.user.fullName, data.user.phone || "", data.user.avatar || "");
+      if (data.user) {
+        const session = data.session;
+        const name = data.user.user_metadata?.full_name || fullName.trim();
+        const token = session?.access_token || "supabase_auth_pending";
+        onSignUpSuccess(
+          data.user.email || email.trim(),
+          token,
+          name,
+          data.user.phone || "",
+          data.user.user_metadata?.avatar_url || ""
+        );
+      } else {
+        setError("Registration succeeded, but no user data was returned.");
+      }
+      setIsLoading(false);
     } catch (err: any) {
       setIsLoading(false);
-      setError("Network or server connection failed. Please try again.");
+      setError(err.message || "Network or server connection failed. Please try again.");
     }
   };
 
@@ -106,7 +135,7 @@ export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogi
             Create Account
           </h2>
           <p className="text-gray-400 text-xs mt-1 mb-6 text-center font-sans font-medium">
-            Join AETRIX AI with your Full Name
+            Join AETRIX AI with your email address
           </p>
 
           <form onSubmit={handleSubmit} className="w-full space-y-4">
@@ -127,6 +156,21 @@ export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogi
                   placeholder="Full Name"
                   className="w-full bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 select-text"
                   id="signup-fullname-input"
+                />
+              </div>
+            </div>
+
+            {/* Email Address */}
+            <div className="flex flex-col gap-1.5">
+              <div className="relative flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 focus-within:border-[#00BFFF]/50 transition-all duration-300 group">
+                <Mail className="w-4 h-4 text-gray-500 group-focus-within:text-[#00BFFF] transition-colors shrink-0 mr-3" />
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email Address"
+                  className="w-full bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 select-text"
+                  id="signup-email-input"
                 />
               </div>
             </div>

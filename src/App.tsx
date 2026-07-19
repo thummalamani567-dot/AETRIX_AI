@@ -12,6 +12,7 @@ import AetrixSettings from "./components/AetrixSettings";
 import AetrixProjects from "./components/AetrixProjects";
 import AetrixLibrary from "./components/AetrixLibrary";
 import Toast, { ToastMessage } from "./components/Toast";
+import { getSupabase, isSupabaseConfigured } from "./supabase";
 
 function SplashScreen() {
   const [loadingText, setLoadingText] = useState("Initializing neural networks...");
@@ -149,31 +150,19 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Securely restore the logged-in session from backend on mount/restart
+  // Securely restore the logged-in session from Supabase on mount/restart
   useEffect(() => {
-    const token = localStorage.getItem("aetrix_session_token");
-    if (token) {
-      fetch("/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      .then((res) => {
-        if (!res.ok) throw new Error("Invalid session token");
-        return res.json();
-      })
-      .then((data) => {
-        setIsLoggedIn(true);
-        setUserEmail(data.user.email);
-        setUserName(data.user.fullName);
-        setUserAvatar(data.user.avatar || "");
-        localStorage.setItem("aetrix_is_logged_in", "true");
-        localStorage.setItem("aetrix_user_email", data.user.email);
-        localStorage.setItem("aetrix_user_name", data.user.fullName);
-        localStorage.setItem("aetrix_user_avatar", data.user.avatar || "");
-      })
-      .catch(() => {
-        // Clear stale session
+    if (!isSupabaseConfigured()) {
+      setIsLoggedIn(false);
+      setUserEmail("guest@aetrix.ai");
+      setUserName("Guest");
+      setUserAvatar("");
+      return;
+    }
+
+    const supabase = getSupabase();
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error || !session) {
         setIsLoggedIn(false);
         setUserEmail("guest@aetrix.ai");
         setUserName("Guest");
@@ -183,13 +172,51 @@ export default function App() {
         localStorage.removeItem("aetrix_user_name");
         localStorage.removeItem("aetrix_user_avatar");
         localStorage.removeItem("aetrix_session_token");
-      });
-    } else {
-      setIsLoggedIn(false);
-      setUserEmail("guest@aetrix.ai");
-      setUserName("Guest");
-      setUserAvatar("");
-    }
+        return;
+      }
+
+      const user = session.user;
+      const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "AETRIX User";
+      setIsLoggedIn(true);
+      setUserEmail(user.email || "");
+      setUserName(name);
+      setUserAvatar(user.user_metadata?.avatar_url || "");
+      localStorage.setItem("aetrix_is_logged_in", "true");
+      localStorage.setItem("aetrix_user_email", user.email || "");
+      localStorage.setItem("aetrix_user_name", name);
+      localStorage.setItem("aetrix_user_avatar", user.user_metadata?.avatar_url || "");
+      localStorage.setItem("aetrix_session_token", session.access_token);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        const user = session.user;
+        const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "AETRIX User";
+        setIsLoggedIn(true);
+        setUserEmail(user.email || "");
+        setUserName(name);
+        setUserAvatar(user.user_metadata?.avatar_url || "");
+        localStorage.setItem("aetrix_is_logged_in", "true");
+        localStorage.setItem("aetrix_user_email", user.email || "");
+        localStorage.setItem("aetrix_user_name", name);
+        localStorage.setItem("aetrix_user_avatar", user.user_metadata?.avatar_url || "");
+        localStorage.setItem("aetrix_session_token", session.access_token);
+      } else {
+        setIsLoggedIn(false);
+        setUserEmail("guest@aetrix.ai");
+        setUserName("Guest");
+        setUserAvatar("");
+        localStorage.removeItem("aetrix_is_logged_in");
+        localStorage.removeItem("aetrix_user_email");
+        localStorage.removeItem("aetrix_user_name");
+        localStorage.removeItem("aetrix_user_avatar");
+        localStorage.removeItem("aetrix_session_token");
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   // Listen to browser popstate events (e.g. back/forward browser buttons)
@@ -373,7 +400,14 @@ export default function App() {
           onBack={() => {
             navigate("/chat");
           }}
-          onLogout={() => {
+          onLogout={async () => {
+            if (isSupabaseConfigured()) {
+              try {
+                await getSupabase().auth.signOut();
+              } catch (err) {
+                console.error("Error signing out of Supabase:", err);
+              }
+            }
             setIsLoggedIn(false);
             setUserEmail("guest@aetrix.ai");
             setUserName("Guest");
@@ -390,48 +424,47 @@ export default function App() {
             navigate("/settings");
           }}
           onUpdateProfile={async (name, email, avatar) => {
-            const token = localStorage.getItem("aetrix_session_token");
+            if (!isSupabaseConfigured()) {
+              throw new Error("Supabase is not configured.");
+            }
             try {
-              const response = await fetch("/api/auth/update-profile", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({ fullName: name, avatar })
+              const supabase = getSupabase();
+              const { data, error } = await supabase.auth.updateUser({
+                data: {
+                  full_name: name,
+                  avatar_url: avatar
+                }
               });
-              if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || "Failed to update profile.");
+              if (error) {
+                throw new Error(error.message);
               }
-              const data = await response.json();
-              setUserName(data.user.fullName);
-              setUserEmail(data.user.email);
-              setUserAvatar(data.user.avatar || "");
-              localStorage.setItem("aetrix_is_logged_in", "true");
-              localStorage.setItem("aetrix_user_name", data.user.fullName);
-              localStorage.setItem("aetrix_user_email", data.user.email);
-              localStorage.setItem("aetrix_user_avatar", data.user.avatar || "");
-              localStorage.setItem("aetrix_session_token", data.token);
+              if (data.user) {
+                const u = data.user;
+                const updatedName = u.user_metadata?.full_name || name;
+                const updatedAvatar = u.user_metadata?.avatar_url || avatar || "";
+                setUserName(updatedName);
+                setUserAvatar(updatedAvatar);
+                localStorage.setItem("aetrix_user_name", updatedName);
+                localStorage.setItem("aetrix_user_avatar", updatedAvatar);
+                addToast("Profile successfully synchronized with Supabase.", "success");
+              }
             } catch (err: any) {
               addToast(err.message || "Failed to update profile", "error");
               throw err;
             }
           }}
           onChangePassword={async (currentPass, newPass) => {
-            const token = localStorage.getItem("aetrix_session_token");
-            const response = await fetch("/api/auth/change-password", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-              },
-              body: JSON.stringify({ currentPass, newPass })
-            });
-            if (!response.ok) {
-              const data = await response.json();
-              throw new Error(data.error || "Failed to change password.");
+            if (!isSupabaseConfigured()) {
+              throw new Error("Supabase is not configured.");
             }
+            const supabase = getSupabase();
+            const { error } = await supabase.auth.updateUser({
+              password: newPass
+            });
+            if (error) {
+              throw new Error(error.message);
+            }
+            addToast("Password changed successfully in Supabase.", "success");
           }}
           addToast={addToast}
         />

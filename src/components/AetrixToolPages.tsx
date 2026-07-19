@@ -278,7 +278,7 @@ export default function AetrixToolPages({ toolId, onBack, userEmail }: AetrixToo
 
       {/* Master Top Header Container */}
       <header className="border-b border-white/10 bg-black/50 backdrop-blur-md sticky top-0 z-30" id="tool-top-bar">
-        <div className="max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] w-full mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           
           {/* Back button top left */}
           <button 
@@ -306,7 +306,7 @@ export default function AetrixToolPages({ toolId, onBack, userEmail }: AetrixToo
 
       {/* Tool Intro Banner */}
       <section className="bg-gradient-to-b from-white/[0.02] to-transparent py-8 border-b border-white/5" id="tool-banner">
-        <div className="max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] w-full mx-auto px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className={`w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-lg shadow-black/50 ${meta.color}`}>
               <Icon className="w-7 h-7" />
@@ -326,7 +326,7 @@ export default function AetrixToolPages({ toolId, onBack, userEmail }: AetrixToo
       </section>
 
       {/* Primary Tool Core Workspace Area */}
-      <main className="flex-1 max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] w-full mx-auto px-4 py-8 relative z-20" id="tool-main-panel">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-8 relative z-20" id="tool-main-panel">
         <AnimatePresence mode="wait">
           <motion.div 
             key={toolId}
@@ -859,7 +859,7 @@ function ChatToolWorkspace({
       </div>
 
       {/* Redesigned Header element to match Resume AI and Summarizer AI exactly */}
-      <div className="max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] mx-auto px-4 sm:px-6 pt-6 pb-2 w-full relative z-10 flex flex-col">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-2 w-full relative z-10 flex flex-col">
         <header className="flex items-center justify-between mb-8" id="chat-header-row">
           <div className="flex items-center gap-4">
             <button 
@@ -899,12 +899,12 @@ function ChatToolWorkspace({
       </div>
 
       {/* Main chat window layout with Glassmorphism */}
-      <div className="relative w-full max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] px-4 sm:px-6 z-10 flex flex-col items-center">
+      <div className="relative w-full max-w-4xl px-4 sm:px-6 z-10 flex flex-col items-center">
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="w-full border border-white/10 bg-[#0c0c0e]/45 backdrop-blur-3xl rounded-3xl overflow-hidden flex flex-col h-[620px] lg:h-[calc(100vh-220px)] min-h-[580px] shadow-2xl custom-glow"
+          className="w-full border border-white/10 bg-[#0c0c0e]/45 backdrop-blur-3xl rounded-3xl overflow-hidden flex flex-col h-[620px] shadow-2xl custom-glow"
         >
           {/* Header controls inside chat card */}
           <div className="px-5 py-3.5 border-b border-white/10 bg-black/45 flex items-center justify-between">
@@ -1628,7 +1628,7 @@ function TranslateToolWorkspace({
       </div>
 
       {/* Redesigned Header element to match Resume AI and Study Helper AI exactly */}
-      <div className="max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] mx-auto px-4 sm:px-6 pt-6 pb-2 w-full relative z-10 flex flex-col">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-2 w-full relative z-10 flex flex-col">
         <header className="flex items-center justify-between mb-8" id="translate-header-row">
           <div className="flex items-center gap-4">
             <button 
@@ -1672,7 +1672,7 @@ function TranslateToolWorkspace({
       </div>
 
       {/* Glassmorphism Language Selector Bar */}
-      <div className="max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] mx-auto w-full px-4 sm:px-6 relative z-10 mb-6">
+      <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 relative z-10 mb-6">
         <div className="p-3 bg-[#0c0c0f]/60 border border-white/10 rounded-2xl backdrop-blur-xl shadow-lg grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4" id="translate-lang-selector-bar" style={{ overflow: "visible" }}>
           
           {/* Left dropdown: Source language */}
@@ -1736,8 +1736,8 @@ function TranslateToolWorkspace({
       </div>
 
       {/* Primary Workspace container */}
-      <div className="max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] mx-auto w-full px-4 sm:px-6 relative z-10 flex-1 flex flex-col pb-6">
-        <div className="flex-1 border border-white/10 rounded-3xl bg-[#0c0c0e]/80 overflow-hidden flex flex-col h-[520px] sm:h-[580px] lg:h-[calc(100vh-320px)] min-h-[500px] shadow-2xl" id="translate-chat-container">
+      <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 relative z-10 flex-1 flex flex-col pb-6">
+        <div className="flex-1 border border-white/10 rounded-3xl bg-[#0c0c0e]/80 overflow-hidden flex flex-col h-[520px] sm:h-[580px] shadow-2xl" id="translate-chat-container">
           
           {/* Messages list */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 scrollbar-thin scrollbar-thumb-white/5">
@@ -2433,7 +2433,7 @@ Text to summarize: "${sourceText}"`;
       <div className="absolute bottom-[20%] right-[10%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[140px] pointer-events-none z-0" />
 
       {/* Redesigned Header element to match Resume AI exactly */}
-      <div className="max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] mx-auto px-4 sm:px-6 pt-6 pb-2 w-full relative z-10 flex flex-col">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-2 w-full relative z-10 flex flex-col">
         <header className="flex items-center justify-between mb-8" id="summarizer-header-row">
           <div className="flex items-center gap-4">
             <button 
@@ -2473,7 +2473,7 @@ Text to summarize: "${sourceText}"`;
       </div>
 
       {/* Inner Screen Switcher Container */}
-      <div className="relative w-full max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] px-4 sm:px-6 z-10 flex flex-col items-center">
+      <div className="relative w-full max-w-4xl px-4 sm:px-6 z-10 flex flex-col items-center">
         
         {/* ========================================================================= */}
         {/* SCREEN 1: EMPTY/INPUT VIEW                                                */}
@@ -3589,7 +3589,7 @@ Return your response exactly structured like this with the three dash dividers:
       </header>
 
       {/* Main Container Workspace */}
-      <div className="relative w-full max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] px-4 sm:px-6 z-10 mt-8 sm:mt-12 flex flex-col items-center">
+      <div className="relative w-full max-w-4xl px-4 sm:px-6 z-10 mt-8 sm:mt-12 flex flex-col items-center">
         
         {/* ========================================================================= */}
         {/* SCREEN 1: EMPTY INPUT WORKSPACE PAGE                                      */}
@@ -4605,7 +4605,7 @@ ${certifications.map(c => `
       </div>
 
       {/* Header element */}
-      <div className="max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] mx-auto px-4 sm:px-6 py-6 w-full relative z-10 flex-1 flex flex-col">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full relative z-10 flex-1 flex flex-col">
         
         {/* Main top header bar */}
         <header className="flex items-center justify-between mb-8" id="resume-header-row">
@@ -6060,7 +6060,7 @@ function PdfToolWorkspace({
         ))}
       </div>
 
-      <div className="max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] mx-auto px-4 sm:px-6 py-6 w-full relative z-10 flex-1 flex flex-col">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full relative z-10 flex-1 flex flex-col">
         
         {/* Top Header Row */}
         <header className="flex items-center justify-between mb-8" id="pdf-header-bar">
@@ -7023,7 +7023,7 @@ function CodeGenToolWorkspace({
       </div>
 
       {/* Redesigned Header element to match Resume AI exactly */}
-      <div className="max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] mx-auto px-4 sm:px-6 pt-6 pb-2 w-full relative z-10 flex flex-col">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-2 w-full relative z-10 flex flex-col">
         <header className="flex items-center justify-between mb-8" id="codegen-header-row">
           <div className="flex items-center gap-4">
             <button 
@@ -7067,7 +7067,7 @@ function CodeGenToolWorkspace({
       </div>
 
       {/* PRIMARY WORKSPACE */}
-      <div className="flex-1 max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] w-full mx-auto px-4 py-6 md:py-10 relative z-10 flex flex-col items-center justify-center">
+      <div className="flex-1 max-w-4xl w-full mx-auto px-4 py-6 md:py-10 relative z-10 flex flex-col items-center justify-center">
         
         {/* ========================================== */}
         {/* SCREEN 1: INPUT PAGE                       */}
@@ -8173,7 +8173,7 @@ function StudyToolWorkspace({
       </div>
 
       {/* Redesigned Header element to match Resume AI and Summarizer AI exactly */}
-      <div className="max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] mx-auto px-4 sm:px-6 pt-6 pb-2 w-full relative z-10 flex flex-col">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-2 w-full relative z-10 flex flex-col">
         <header className="flex items-center justify-between mb-8" id="study-header-row">
           <div className="flex items-center gap-4">
             <button 
@@ -8271,7 +8271,7 @@ function StudyToolWorkspace({
       </div>
 
       {/* Screen view content */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 relative z-10 flex flex-col justify-start max-w-5xl lg:max-w-7xl xl:max-w-[90%] 2xl:max-w-[85%] mx-auto w-full pb-28">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 relative z-10 flex flex-col justify-start max-w-4xl mx-auto w-full pb-28">
         
         {/* VIEW 1: STUDY HELPER DASHBOARD HUB (COLUMN 4 STYLE) */}
         {activeView === "hub" && (
