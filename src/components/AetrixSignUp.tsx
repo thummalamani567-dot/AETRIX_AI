@@ -27,7 +27,7 @@ export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogi
     setError("");
 
     if (!isSupabaseConfigured()) {
-      setError("Supabase is not configured. Please define NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment variables.");
+      setError("Supabase is not configured. Please define VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment variables.");
       return;
     }
 
@@ -79,17 +79,8 @@ export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogi
       if (data.user) {
         const session = data.session;
         if (!session) {
-          // Supabase is configured with email confirmation required!
-          // Auto-bypass email confirmation for instant preview/test execution
-          console.log("Auto-bypassing email confirmation on sign up.");
-          const name = data.user.user_metadata?.full_name || fullName.trim();
-          onSignUpSuccess(
-            data.user.email || email.trim(),
-            "demo_bypass_token",
-            name,
-            data.user.phone || "",
-            data.user.user_metadata?.avatar_url || ""
-          );
+          // Email confirmation is required by Supabase configuration
+          setIsConfirmationRequired(true);
           setIsLoading(false);
           return;
         }
@@ -168,17 +159,18 @@ export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogi
                 >
                   Go to Login
                 </button>
+              </div>
 
-                <button
+              <div className="mt-2 text-xs text-gray-500 font-medium text-center mb-4">
+                or{" "}
+                <button 
                   type="button"
                   onClick={() => {
-                    const name = fullName.trim() || email.split("@")[0] || "AETRIX User";
-                    onSignUpSuccess(email, "demo_bypass_token", name, "", "");
+                    onSignUpSuccess("guest@aetrix.ai", "guest-token-" + Date.now(), "Guest User", "", "");
                   }}
-                  className="w-full h-[44px] rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 font-semibold text-xs active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer"
-                  id="bypass-signup-btn"
+                  className="text-emerald-400 hover:underline font-semibold cursor-pointer ml-1"
                 >
-                  Bypass & Log In (Demo Mode)
+                  Continue as Guest (Bypass Verification)
                 </button>
               </div>
 
@@ -309,29 +301,10 @@ export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogi
                     "Sign Up"
                   )}
                 </button>
-
-                <div className="flex items-center my-3">
-                  <div className="h-px bg-white/10 flex-1" />
-                  <span className="text-[10px] text-gray-500 font-mono tracking-widest uppercase mx-3">OR</span>
-                  <div className="h-px bg-white/10 flex-1" />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const demoEmail = email.trim() || "demo@aetrix.ai";
-                    const name = fullName.trim() || demoEmail.split("@")[0] || "Demo User";
-                    onSignUpSuccess(demoEmail, "demo_bypass_token", name, "", "");
-                  }}
-                  className="w-full h-[48px] rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 font-semibold text-xs active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                  id="direct-bypass-signup-btn"
-                >
-                  Bypass & Use Demo Mode (Instant Access)
-                </button>
               </form>
 
               {/* Switch to Login */}
-              <div className="mt-8 text-xs text-gray-400 font-medium">
+              <div className="mt-8 text-xs text-gray-400 font-medium text-center">
                 Already have an account?{" "}
                 <button 
                   type="button"
@@ -339,6 +312,19 @@ export default function AetrixSignUp({ onBack, onSignUpSuccess, onNavigateToLogi
                   className="text-[#00BFFF] hover:underline font-semibold cursor-pointer ml-1"
                 >
                   Login
+                </button>
+              </div>
+
+              <div className="mt-4 text-xs text-gray-500 font-medium text-center">
+                or{" "}
+                <button 
+                  type="button"
+                  onClick={() => {
+                    onSignUpSuccess("guest@aetrix.ai", "guest-token-" + Date.now(), "Guest User", "", "");
+                  }}
+                  className="text-emerald-400 hover:underline font-semibold cursor-pointer ml-1"
+                >
+                  Continue as Guest (Bypass Signup)
                 </button>
               </div>
             </>

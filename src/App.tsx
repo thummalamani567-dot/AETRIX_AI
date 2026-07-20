@@ -163,17 +163,6 @@ export default function App() {
 
   // Securely restore the logged-in session from Supabase on mount/restart
   useEffect(() => {
-    if (localStorage.getItem("aetrix_session_token") === "demo_bypass_token") {
-      setIsLoggedIn(true);
-      const savedEmail = localStorage.getItem("aetrix_user_email") || "demo@aetrix.ai";
-      const savedName = localStorage.getItem("aetrix_user_name") || "Demo User";
-      const savedAvatar = localStorage.getItem("aetrix_user_avatar") || "";
-      setUserEmail(savedEmail);
-      setUserName(savedName);
-      setUserAvatar(savedAvatar);
-      return;
-    }
-
     if (!isSupabaseConfigured()) {
       setIsLoggedIn(false);
       setUserEmail("guest@aetrix.ai");
@@ -227,9 +216,6 @@ export default function App() {
     };
 
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (localStorage.getItem("aetrix_session_token") === "demo_bypass_token") {
-        return; // Skip if user logged in via demo mode during async check
-      }
       if (error || !session) {
         setIsLoggedIn(false);
         setUserEmail("guest@aetrix.ai");
@@ -246,12 +232,11 @@ export default function App() {
       const user = session.user;
       fetchUserProfile(user);
       localStorage.setItem("aetrix_session_token", session.access_token);
+    }).catch(err => {
+      console.warn("Resiliently handled getSession rejection:", err);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (localStorage.getItem("aetrix_session_token") === "demo_bypass_token") {
-        return; // Do not clear session if we are in demo mode!
-      }
       if (session) {
         const user = session.user;
         fetchUserProfile(user);
@@ -490,17 +475,6 @@ export default function App() {
             navigate("/settings");
           }}
           onUpdateProfile={async (name, email, avatar) => {
-            if (localStorage.getItem("aetrix_session_token") === "demo_bypass_token") {
-              setUserName(name);
-              if (email) setUserEmail(email);
-              if (avatar) setUserAvatar(avatar);
-              localStorage.setItem("aetrix_user_name", name);
-              if (email) localStorage.setItem("aetrix_user_email", email);
-              if (avatar) localStorage.setItem("aetrix_user_avatar", avatar);
-              addToast("Profile successfully updated locally in Demo Mode.", "success");
-              return;
-            }
-
             if (!isSupabaseConfigured()) {
               throw new Error("Supabase is not configured.");
             }
@@ -519,23 +493,41 @@ export default function App() {
                 const blob = base64ToBlob(avatar, mimeType);
                 const fileName = `${user.id}/${Date.now()}.jpg`;
 
-                const { data: uploadData, error: uploadError } = await supabase.storage
+                let uploadResult = await supabase.storage
                   .from("avatars")
                   .upload(fileName, blob, {
                     contentType: mimeType,
                     upsert: true
                   });
 
-                if (uploadError) {
-                  console.error("Storage upload error:", uploadError);
-                  throw new Error(`Failed to upload avatar: ${uploadError.message}`);
+                // Robust recovery if bucket is not found
+                if (uploadResult.error && (uploadResult.error.message.includes("not found") || uploadResult.error.message.includes("Bucket"))) {
+                  console.log("Bucket 'avatars' not found, attempting to create it...");
+                  try {
+                    await supabase.storage.createBucket("avatars", { public: true });
+                    // Retry upload
+                    uploadResult = await supabase.storage
+                      .from("avatars")
+                      .upload(fileName, blob, {
+                        contentType: mimeType,
+                        upsert: true
+                      });
+                  } catch (createErr) {
+                    console.error("Failed to programmatically create avatars bucket:", createErr);
+                  }
                 }
 
-                const { data: { publicUrl } } = supabase.storage
-                  .from("avatars")
-                  .getPublicUrl(fileName);
+                if (uploadResult.error) {
+                  console.warn("Storage upload error, falling back to direct base64 storage:", uploadResult.error);
+                  addToast("Avatar saved locally and synchronized with database.", "info");
+                  avatarUrl = avatar; // Direct base64 fallback
+                } else {
+                  const { data: { publicUrl } } = supabase.storage
+                    .from("avatars")
+                    .getPublicUrl(fileName);
 
-                avatarUrl = publicUrl;
+                  avatarUrl = publicUrl;
+                }
               }
 
               // Update the database profiles table
@@ -547,9 +539,10 @@ export default function App() {
                   updated_at: new Date().toISOString()
                 });
 
+              let syncedWithDb = true;
               if (dbError && dbError.code !== "42P01") {
-                console.error("DB Profiles upsert error:", dbError);
-                throw new Error(`Failed to save database profile: ${dbError.message}`);
+                console.warn("DB Profiles upsert failed (continuing with auth and local storage fallbacks):", dbError);
+                syncedWithDb = false;
               }
 
               // Also update user metadata in Supabase Auth as a fallback
@@ -564,18 +557,18 @@ export default function App() {
               setUserAvatar(avatarUrl);
               localStorage.setItem("aetrix_user_name", name);
               localStorage.setItem("aetrix_user_avatar", avatarUrl);
-              addToast("Profile successfully synchronized with Supabase.", "success");
+              
+              if (syncedWithDb) {
+                addToast("Profile successfully synchronized with Supabase database.", "success");
+              } else {
+                addToast("Profile updated locally and inside authentication settings.", "info");
+              }
             } catch (err: any) {
               addToast(err.message || "Failed to update profile", "error");
               throw err;
             }
           }}
           onChangePassword={async (currentPass, newPass) => {
-            if (localStorage.getItem("aetrix_session_token") === "demo_bypass_token") {
-              addToast("Password changed successfully in Demo Mode (Local only).", "success");
-              return;
-            }
-
             if (!isSupabaseConfigured()) {
               throw new Error("Supabase is not configured.");
             }

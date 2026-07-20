@@ -874,39 +874,6 @@ ${err.message || "An unexpected error occurred while communicating with the serv
         return updatedAll;
       });
       setIsLoading(false);
-      return;
-
-      // Premium elegant inline offline simulation fallback
-      setTimeout(() => {
-        let fallbackContent = `### Aetrix AI Intelligence Response\n\nI processed your request`;
-        if (userText) fallbackContent += `: **"${userText}"**`;
-        fallbackContent += `.\n\n* **Model Active**: \`Gemini 2.5 Flash\`\n* **Status**: Local simulation sandbox fallback is active.`;
-        
-        if (userImages && userImages.length > 0) {
-          fallbackContent += `\n* **Images Synced**: ${userImages.length} asset(s) analyzed (**${userImageNames.join(", ")}**).`;
-        }
-        if (userAttachments && userAttachments.length > 0) {
-          fallbackContent += `\n* **Files Synced**: ${userAttachments.length} document(s) uploaded (**${userAttachments.map((a: any) => a.name).join(", ")}**).`;
-        }
-        if (userVoiceNote) {
-          fallbackContent += `\n* **Voice Stream Synced**: Neural audio frequency stream evaluated.`;
-        }
-        
-        fallbackContent += `\n\nLet me know if you would like me to assist you with further details or questions!`;
-
-        const assistantMsg: Message = {
-          id: "ai-" + Date.now() + "-" + Math.floor(Math.random() * 1000000),
-          role: "assistant",
-          content: fallbackContent,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        };
-
-        setMessages((prev) => {
-          const updatedAll = [...prev, assistantMsg];
-          updateConversationStateAndStorage(convId!, title, updatedAll);
-          return updatedAll;
-        });
-      }, 1000);
     } finally {
       setIsLoading(false);
     }

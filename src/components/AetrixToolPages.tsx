@@ -663,20 +663,16 @@ function ChatToolWorkspace({
         saveAllMessagesToHistory(updated);
         addToast("Response regenerated.", "success");
       } else {
-        throw new Error();
+        throw new Error(data.error || "Failed to regenerate response.");
       }
-    } catch {
-      const lastUserText = preceding[preceding.length - 1]?.content || "";
-      const fallbackText = `### Interactive Chat Session Fallback\n\nI parsed your message: **"${lastUserText}"**.\n\nHere are some relevant insights:\n* **System Status**: Direct client sandboxing active.\n* **Capability**: Supporting markdown grids, bullet points, and syntax highlighting.\n\nLet me know if you would like me to assist you with something else!`;
-      const newAiMsg = { 
+    } catch (err: any) {
+      const errMsg = err.message || "An error occurred. Unable to contact the AI service.";
+      addToast(errMsg, "info");
+      setMessages((prev) => [...prev, { 
         role: "assistant" as const, 
-        content: fallbackText, 
+        content: `Error: ${errMsg}`, 
         id: Date.now().toString() + "-ai-" + Math.floor(Math.random() * 1000000) 
-      };
-      const updated = [...preceding, newAiMsg];
-      setMessages(updated);
-      saveAllMessagesToHistory(updated);
-      addToast("Response regenerated (fallback).", "info");
+      }]);
     } finally {
       setLoading(false);
     }
@@ -779,18 +775,16 @@ function ChatToolWorkspace({
         setMessages((prev) => [...prev, { role: "assistant", content: aiText, id: Date.now().toString() + "-ai-" + Math.floor(Math.random() * 1000000) }]);
         saveToolMessageToHistory(userEmail || "guest", "chat", text, aiText, activeConvIdRef.current, updateActiveConvId);
       } else {
-        throw new Error();
+        throw new Error(data.error || "Failed to contact AI service.");
       }
-    } catch {
-      const fallbackText = `### Interactive Chat Session Fallback\n\nI parsed your message: **"${text}"**.\n\nHere are some relevant insights:\n* **System Status**: Direct client sandboxing active.\n* **Capability**: Supporting markdown grids, bullet points, and syntax highlighting.\n\nLet me know if you would like me to assist you with something else!`;
-      setTimeout(() => {
-        setMessages((prev) => [...prev, { 
-          role: "assistant", 
-          content: fallbackText, 
-          id: Date.now().toString() + "-ai-" + Math.floor(Math.random() * 1000000) 
-        }]);
-        saveToolMessageToHistory(userEmail || "guest", "chat", text, fallbackText, activeConvIdRef.current, updateActiveConvId);
-      }, 800);
+    } catch (err: any) {
+      const errMsg = err.message || "An error occurred. Unable to contact the AI service.";
+      addToast(errMsg, "info");
+      setMessages((prev) => [...prev, { 
+        role: "assistant", 
+        content: `Error: ${errMsg}`, 
+        id: Date.now().toString() + "-ai-" + Math.floor(Math.random() * 1000000) 
+      }]);
     } finally {
       setLoading(false);
     }
@@ -1478,66 +1472,39 @@ function TranslateToolWorkspace({
     setTranslating(true);
 
     try {
-      const cleanInput = text.trim().toLowerCase().replace(/\s+/g, ' ');
-      let matchedTranslation = "";
-
-      // Try finding predefined translation
-      for (const key of Object.keys(predefinedTranslations)) {
-        if (cleanInput.includes(key.toLowerCase()) || key.toLowerCase().includes(cleanInput)) {
-          if (predefinedTranslations[key][targetLang]) {
-            matchedTranslation = predefinedTranslations[key][targetLang];
-            break;
-          }
-        }
-      }
-
-      if (matchedTranslation) {
-        // Soft artificial delay for premium AI feel
-        await new Promise(r => setTimeout(r, 800));
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            { 
+              role: "user", 
+              content: `Translate the following text into ${targetLang}. Detect the source language. Output ONLY the translated string without any quotation marks, explanations, or preamble: "${text}"` 
+            }
+          ]
+        })
+      });
+      const data = await response.json();
+      if (response.ok && data.text) {
+        const result = data.text.replace(/^["']|["']$/g, "");
         setMessages(prev => [...prev, { 
           role: "assistant", 
-          content: matchedTranslation, 
+          content: result, 
           id: `ai-${Date.now()}-${Math.floor(Math.random() * 1000000)}` 
         }]);
-        saveToolMessageToHistory(userEmail || "guest", "translate", text, matchedTranslation, activeConvIdRef.current, updateActiveConvId);
+        saveToolMessageToHistory(userEmail || "guest", "translate", text, result, activeConvIdRef.current, updateActiveConvId);
       } else {
-        // Fallback to real backend route
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messages: [
-              { 
-                role: "user", 
-                content: `Translate the following text into ${targetLang}. Detect the source language. Output ONLY the translated string without any quotation marks, explanations, or preamble: "${text}"` 
-              }
-            ]
-          })
-        });
-        const data = await response.json();
-        if (response.ok && data.text) {
-          const result = data.text.replace(/^["']|["']$/g, "");
-          setMessages(prev => [...prev, { 
-            role: "assistant", 
-            content: result, 
-            id: `ai-${Date.now()}-${Math.floor(Math.random() * 1000000)}` 
-          }]);
-          saveToolMessageToHistory(userEmail || "guest", "translate", text, result, activeConvIdRef.current, updateActiveConvId);
-        } else {
-          throw new Error();
-        }
+        throw new Error(data.error || "Translation failed.");
       }
       addToast("Translation complete", "success");
-    } catch {
-      // Direct mock response with translation
-      const fallbackResult = `[${targetLang} translation of: "${text}"]`;
+    } catch (err: any) {
+      const errMsg = err.message || "An error occurred during translation.";
+      addToast(errMsg, "info");
       setMessages(prev => [...prev, { 
         role: "assistant", 
-        content: fallbackResult, 
+        content: `Error: ${errMsg}`, 
         id: `ai-${Date.now()}-${Math.floor(Math.random() * 1000000)}` 
       }]);
-      saveToolMessageToHistory(userEmail || "guest", "translate", text, fallbackResult, activeConvIdRef.current, updateActiveConvId);
-      addToast("Translated with fallback", "info");
     } finally {
       setTranslating(false);
     }
@@ -2189,6 +2156,7 @@ function SummarizerToolWorkspace({
     setLoadingStep(0);
 
     let apiResult: any = null;
+    let apiError = "";
     let apiCompleted = false;
 
     // Trigger API route in parallel for non-presets
@@ -2235,9 +2203,12 @@ Text to summarize: "${sourceText}"`;
               saved: savedVal > 10 ? savedVal : 72,
               keywords: finalKeys
             };
+          } else {
+            throw new Error(data.error || "Failed to generate summary.");
           }
-        } catch (err) {
-          console.error("API summarization error, falling back to local synthesizer:", err);
+        } catch (err: any) {
+          console.error("API summarization error:", err);
+          apiError = err.message || "An error occurred during summarization.";
         } finally {
           apiCompleted = true;
         }
@@ -2270,6 +2241,12 @@ Text to summarize: "${sourceText}"`;
         clearInterval(interval);
 
         const finalizeResponse = () => {
+          if (apiError) {
+            addToast(`Summarization failed: ${apiError}`, "info");
+            setActiveScreen("input");
+            return;
+          }
+
           if (isPreset && matchingPreset) {
             setSummaryText(matchingPreset.summary);
             setHighlights(matchingPreset.highlights);
@@ -2285,14 +2262,13 @@ Text to summarize: "${sourceText}"`;
             setReadingTimeSaved(apiResult.saved);
             setKeywords(apiResult.keywords);
           } else {
-            // Apply dynamic smart synthesis
-            const fallback = generateCustomSummary(sourceText);
-            setSummaryText(fallback.summary);
-            setHighlights(fallback.highlights);
-            setOriginalWordCount(fallback.words);
-            setSummaryWordCount(fallback.summaryWords);
-            setReadingTimeSaved(fallback.saved);
-            setKeywords(fallback.keywords);
+            // No result and no error means empty fallback
+            setSummaryText("");
+            setHighlights([]);
+            setOriginalWordCount(0);
+            setSummaryWordCount(0);
+            setReadingTimeSaved(0);
+            setKeywords([]);
           }
 
           const finalSum = (isPreset && matchingPreset) 
@@ -3199,6 +3175,7 @@ function CodyToolWorkspace({
     setLoadingStep(0);
 
     let apiResult: any = null;
+    let apiError = "";
     let apiCompleted = false;
 
     // Trigger API call in parallel if it is not a preset
@@ -3256,9 +3233,12 @@ Return your response exactly structured like this with the three dash dividers:
                 "[SUCCESS] Executable package compiled."
               ]
             };
+          } else {
+            throw new Error(data.error || "Failed to generate solution.");
           }
-        } catch (e) {
-          console.error("API coding error, compiling default payload", e);
+        } catch (e: any) {
+          console.error("API coding error", e);
+          apiError = e.message || "Failed to generate code.";
         } finally {
           apiCompleted = true;
         }
@@ -3290,6 +3270,12 @@ Return your response exactly structured like this with the three dash dividers:
         clearInterval(interval);
 
         const finalizeResponseScreen = () => {
+          if (apiError) {
+            addToast(`Generation failed: ${apiError}`, "info");
+            setActiveScreen("input");
+            return;
+          }
+
           const finalData = apiResult || {
             title: `${selectedLanguage} Standard Algorithmic Module`,
             code: `// Custom ${selectedLanguage} Module Compiled\n\nfunction processNode() {\n    const nodeName = "Aetrix Core Node";\n    console.log("Analyzing telemetry metrics for: ", nodeName);\n    return true;\n}`,
@@ -5875,17 +5861,23 @@ function PdfToolWorkspace({
         setMessages(initMsgs);
         savePdfStateToHistory(parsed, initMsgs, fileName, selectedFile?.size || "142 KB");
       } else {
-        throw new Error();
+        throw new Error(data.error || "Failed to analyze document.");
       }
-    } catch {
-      // High fidelity technical fallback summary
-      const fallback = getDefaultSummary(fileName, context);
-      setSummarySections(fallback);
+    } catch (err: any) {
+      const errMsg = err.message || "Failed to analyze document.";
+      addToast(errMsg, "info");
+      const errorSummary = {
+        summary: `Analysis Error: ${errMsg}`,
+        keyPoints: "• Analysis aborted due to error\n• Please verify your API keys\n• Ensure the server is online",
+        detailed: "Document analysis could not be completed because the backend returned an error.",
+        insights: "• Error diagnostic code: 500\n• Endpoint mapping failed"
+      };
+      setSummarySections(errorSummary);
       const initMsgs = [
-        { role: "assistant" as const, content: `Hello! Ingested \`${fileName}\` successfully. I've compiled a premium structural summary of the document. Let me know if you would like to run diagnostic simulations or deep-dives!` }
+        { role: "assistant" as const, content: `Analysis Failed: ${errMsg}` }
       ];
       setMessages(initMsgs);
-      savePdfStateToHistory(fallback, initMsgs, fileName, selectedFile?.size || "142 KB");
+      savePdfStateToHistory(errorSummary, initMsgs, fileName, selectedFile?.size || "142 KB");
     } finally {
       setStep("result");
       addToast("Analysis completed!", "success");
@@ -5961,15 +5953,14 @@ function PdfToolWorkspace({
         setMessages(updated);
         savePdfStateToHistory(summarySections, updated, selectedFile.name, selectedFile.size);
       } else {
-        throw new Error();
+        throw new Error(data.error || "Query failed.");
       }
-    } catch {
-      const aiContent = `### Interactive Insight\n\nRegarding your document query **"${text}"**:\n\n* **Ingested Document**: \`${selectedFile.name}\`\n* **Status**: Analysis complete. The specified pattern lines align with standard specifications within the active workspace.`;
-      setTimeout(() => {
-        const updated = [...messages, userMsg, { role: "assistant" as const, content: aiContent }];
-        setMessages(updated);
-        savePdfStateToHistory(summarySections, updated, selectedFile.name, selectedFile.size);
-      }, 700);
+    } catch (err: any) {
+      const errMsg = err.message || "An error occurred during document query.";
+      addToast(errMsg, "info");
+      const updated = [...messages, userMsg, { role: "assistant" as const, content: `Error: ${errMsg}` }];
+      setMessages(updated);
+      savePdfStateToHistory(summarySections, updated, selectedFile.name, selectedFile.size);
     } finally {
       setChatLoading(false);
     }
@@ -6776,83 +6767,52 @@ function CodeGenToolWorkspace({
           optimizationsTextRef.current = "Inlined functional properties.";
         }
       } else {
-        throw new Error("Connection failed");
+        throw new Error(data.error || "Connection failed");
       }
-    } catch (err) {
-      setTimeout(() => {
-        let codeFallback = "";
-        let expFallback = "";
-        let timeFallback = "O(N)";
-        let spaceFallback = "O(1)";
-        let practicesFallback = "Verify inputs and apply standard type constraints.";
-        let optimizationFallback = "Cache repeating sub-procedures.";
-
-        if (selectedLang.toLowerCase() === "python") {
-          codeFallback = `def execute_process(items: list) -> list:\n    """\n    Optimized process flow for: ${prompt}\n    """\n    if not items:\n        return []\n    \n    # Map elements with a functional scale factor\n    scale_factor = 1.08\n    processed = [item * scale_factor for item in items if item is not None]\n    \n    return processed\n\n# Quick test\ntest_data = [10, 20, None, 40]\noutput = execute_process(test_data)\nprint("Processed items:", output)`;
-          expFallback = "This Python solution defines a robust list-mapping function with active boundary checks. It filters out empty or null values and applies a consistent linear transformation efficiently.";
-          timeFallback = "O(N)";
-          spaceFallback = "O(N)";
-        } else if (selectedLang.toLowerCase() === "javascript" || selectedLang.toLowerCase() === "typescript" || selectedLang.toLowerCase() === "react") {
-          codeFallback = `// Optimized processor module for: ${prompt}\nexport function processDataStream<T extends { value: number; active: boolean }>(items: T[]): number[] {\n  if (!items || items.length === 0) return [];\n  \n  return items\n    .filter(item => item.active)\n    .map(item => item.value * 1.08);\n}`;
-          expFallback = "An elegant JavaScript/TypeScript utility for array transformations. Uses pure stream filters and functional map transformations with built-in parameter safety bounds.";
-          timeFallback = "O(N)";
-          spaceFallback = "O(N)";
-        } else {
-          codeFallback = `// Custom compiled ${selectedLang} module\n// Query: ${prompt}\n\n#include <iostream>\n\nvoid runModule() {\n    std::cout << "AETRIX Core processed code successfully." << std::endl;\n}`;
-          expFallback = `Tailor-made structural script satisfying "${prompt}". Meets structural layout requirements and provides high performance runtime execution in ${selectedLang}.`;
-        }
-
-        setCode(codeFallback);
-        codeRef.current = codeFallback;
-        setExplanation(expFallback);
-        explanationRef.current = expFallback;
-        setTimeComplexity(timeFallback);
-        timeComplexityRef.current = timeFallback;
-        setSpaceComplexity(spaceFallback);
-        spaceComplexityRef.current = spaceFallback;
-        setBestPracticesText(practicesFallback);
-        bestPracticesTextRef.current = practicesFallback;
-        setOptimizationsText(optimizationFallback);
-        optimizationsTextRef.current = optimizationFallback;
-      }, 400);
-    } finally {
-      // Complete loading beautifully
-      setTimeout(() => {
-        const finalQuality = Math.floor(Math.random() * 5) + 95;
-        const finalConfidence = Math.floor(Math.random() * 4) + 96;
-        const finalExecTime = `${(Math.random() * 15 + 3).toFixed(1)}ms`;
-
-        setQualityScore(finalQuality);
-        setConfidenceScore(finalConfidence);
-        setExecutionTime(finalExecTime);
-
-        setScreen("ANSWER");
-        setActiveTab("code");
-
-        // Save to dynamic history!
-        const historyPayload = {
-          code: codeRef.current,
-          explanation: explanationRef.current,
-          timeComplexity: timeComplexityRef.current,
-          spaceComplexity: spaceComplexityRef.current,
-          bestPracticesText: bestPracticesTextRef.current,
-          optimizationsText: optimizationsTextRef.current,
-          qualityScore: finalQuality,
-          confidenceScore: finalConfidence,
-          executionTime: finalExecTime
-        };
-
-        const promptSummary = prompt.length > 80 ? prompt.substring(0, 77) + "..." : prompt;
-        saveToolMessageToHistory(
-          userEmail || "guest",
-          "code-gen",
-          `Code Generator: "${promptSummary}"`,
-          JSON.stringify(historyPayload),
-          activeConvIdRef.current,
-          updateActiveConvId
-        );
-      }, 4000);
+    } catch (err: any) {
+      clearInterval(timer);
+      const errMsg = err.message || "An error occurred during code generation.";
+      addToast(errMsg, "info");
+      setScreen("INPUT");
+      return;
     }
+
+    // Complete loading beautifully
+    setTimeout(() => {
+      const finalQuality = Math.floor(Math.random() * 5) + 95;
+      const finalConfidence = Math.floor(Math.random() * 4) + 96;
+      const finalExecTime = `${(Math.random() * 15 + 3).toFixed(1)}ms`;
+
+      setQualityScore(finalQuality);
+      setConfidenceScore(finalConfidence);
+      setExecutionTime(finalExecTime);
+
+      setScreen("ANSWER");
+      setActiveTab("code");
+
+      // Save to dynamic history!
+      const historyPayload = {
+        code: codeRef.current,
+        explanation: explanationRef.current,
+        timeComplexity: timeComplexityRef.current,
+        spaceComplexity: spaceComplexityRef.current,
+        bestPracticesText: bestPracticesTextRef.current,
+        optimizationsText: optimizationsTextRef.current,
+        qualityScore: finalQuality,
+        confidenceScore: finalConfidence,
+        executionTime: finalExecTime
+      };
+
+      const promptSummary = prompt.length > 80 ? prompt.substring(0, 77) + "..." : prompt;
+      saveToolMessageToHistory(
+        userEmail || "guest",
+        "code-gen",
+        `Code Generator: "${promptSummary}"`,
+        JSON.stringify(historyPayload),
+        activeConvIdRef.current,
+        updateActiveConvId
+      );
+    }, 1000);
   };
 
   // Run simulated script compiler terminal
@@ -7972,38 +7932,28 @@ function StudyToolWorkspace({
             updateActiveConvId
           );
         } else {
-          throw new Error();
+          throw new Error(resData.error || "Failed to fetch answer.");
         }
       }
       setStep("answer");
-    } catch {
-      // Fallback study explanation
-      await new Promise(resolve => setTimeout(resolve, 3800));
-      const fallbackData = {
+    } catch (err: any) {
+      const errMsg = err.message || "An error occurred during study lookup.";
+      addToast(errMsg, "info");
+      const errorData = {
         title: text,
-        subtitle: "Dynamic Study Summary",
-        definition: `Here is the comprehensive diagnostic explanation regarding your academic query **"${text}"**.\nOur system analyzed the structural properties and calculated high-fidelity tutorial nodes.`,
+        subtitle: "Study Query Failed",
+        definition: `Could not retrieve explanation: ${errMsg}`,
         keyPoints: [
-          "Direct educational analysis performed in real-time.",
-          "Concept categorized under general core study parameters.",
-          "Verified for compliance with standards."
+          "Study helper could not contact the AI service.",
+          "Please verify your API settings.",
+          "Check backend connection."
         ],
         steps: [
-          "Observe the structural definition of the prompt.",
-          "Compile relevant scientific references.",
-          "Execute learning analysis and review the compiled notes."
+          "Review network settings.",
+          "Retry request in a moment."
         ]
       };
-      setAnswerData(fallbackData);
-
-      saveToolMessageToHistory(
-        userEmail || "guest",
-        "study",
-        `Study: "${text}"`,
-        JSON.stringify(fallbackData),
-        activeConvIdRef.current,
-        updateActiveConvId
-      );
+      setAnswerData(errorData);
       setStep("answer");
     }
   };
