@@ -37,7 +37,7 @@ export default function AetrixSettings({ onBack, addToast, userEmail, onLogout, 
   };
 
   return (
-    <div className="absolute inset-0 w-full h-full bg-[#070a13] text-white font-sans flex flex-col overflow-y-auto select-none z-30" id="aetrix-settings-screen">
+    <div className="absolute inset-0 w-full h-[100dvh] max-h-[100dvh] bg-[#070a13] text-white font-sans flex flex-col overflow-y-auto select-none z-30" id="aetrix-settings-screen">
       {/* Background Star pattern and custom glows */}
       <div className="absolute top-0 inset-x-0 h-[400px] bg-gradient-to-b from-[#0b0f19] to-transparent opacity-70 pointer-events-none" />
       <div className="absolute w-[400px] h-[400px] rounded-full bg-[#00BFFF]/5 blur-3xl top-10 left-1/4 pointer-events-none" />

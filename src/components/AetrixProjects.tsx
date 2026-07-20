@@ -71,7 +71,7 @@ export default function AetrixProjects({ onBack, addToast }: AetrixProjectsProps
   };
 
   return (
-    <div className="absolute inset-0 w-full h-full bg-[#050811] text-white font-sans flex flex-col overflow-y-auto select-none z-30" id="aetrix-projects-screen">
+    <div className="absolute inset-0 w-full h-[100dvh] max-h-[100dvh] bg-[#050811] text-white font-sans flex flex-col overflow-y-auto select-none z-30" id="aetrix-projects-screen">
       {/* Visual background flourishes */}
       <div className="absolute top-0 inset-x-0 h-[380px] bg-gradient-to-b from-[#0b0f19] to-transparent opacity-70 pointer-events-none" />
       <div className="absolute w-[350px] h-[350px] rounded-full bg-[#00BFFF]/10 blur-3xl -top-10 -left-10 pointer-events-none" />

@@ -270,7 +270,7 @@ export default function AetrixFeaturesPage({ onBack, onSelectTool, userName = "A
   );
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-[#00BFFF] selection:text-black overflow-x-hidden relative" id="aetrix-features-page">
+    <div className="w-full h-[100dvh] max-h-[100dvh] bg-black text-white font-sans selection:bg-[#00BFFF] selection:text-black overflow-x-hidden overflow-y-auto relative" id="aetrix-features-page">
       {/* Ultra-premium interactive animated space background */}
       <PremiumSpaceBackground />
 

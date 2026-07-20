@@ -258,7 +258,7 @@ export default function AetrixToolPages({ toolId, onBack, userEmail }: AetrixToo
   const Icon = meta.icon;
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-[#00BFFF] selection:text-black relative flex flex-col" id="aetrix-tool-page">
+    <div className="w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-black text-white font-sans selection:bg-[#00BFFF] selection:text-black relative flex flex-col" id="aetrix-tool-page">
       {/* Background Star grid & ambient glows */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
       <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-[#00BFFF]/5 rounded-full blur-3xl pointer-events-none" />
@@ -804,7 +804,7 @@ function ChatToolWorkspace({
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0B0F19] text-white flex flex-col items-center justify-start overflow-x-hidden font-sans pb-16 selection:bg-[#00BFFF]/30">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#0B0F19] text-white flex flex-col items-center justify-start overflow-x-hidden font-sans pb-16 selection:bg-[#00BFFF]/30">
       {/* 60 FPS Stars Background Layer */}
       <div className="absolute inset-0 z-0">
         <PremiumSpaceBackground />
@@ -1550,7 +1550,7 @@ function TranslateToolWorkspace({
   );
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-white font-sans selection:bg-[#00BFFF] selection:text-black overflow-x-hidden relative flex flex-col pb-20" id="aetrix-translate-page">
+    <div className="w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#0B0F19] text-white font-sans selection:bg-[#00BFFF] selection:text-black overflow-x-hidden relative flex flex-col pb-20" id="aetrix-translate-page">
       {/* Floating particles background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         {particles.map((p) => (
@@ -2377,7 +2377,7 @@ Text to summarize: "${sourceText}"`;
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0B0F19] text-white flex flex-col items-center justify-start overflow-x-hidden font-sans pb-16 selection:bg-[#00BFFF]/30">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#0B0F19] text-white flex flex-col items-center justify-start overflow-x-hidden font-sans pb-16 selection:bg-[#00BFFF]/30">
       {/* 60 FPS Stars Background Layer */}
       <div className="absolute inset-0 z-0">
         <PremiumSpaceBackground />
@@ -3480,7 +3480,7 @@ Return your response exactly structured like this with the three dash dividers:
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0B0F19] text-white flex flex-col items-center justify-start overflow-x-hidden font-sans pb-16 selection:bg-[#00BFFF]/30">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#0B0F19] text-white flex flex-col items-center justify-start overflow-x-hidden font-sans pb-16 selection:bg-[#00BFFF]/30">
       
       {/* 3D Cosmic Space Background Layer */}
       <div className="absolute inset-0 z-0">
@@ -4533,7 +4533,7 @@ ${certifications.map(c => `
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00BFFF] selection:text-black overflow-x-hidden relative flex flex-col pb-20" id="aetrix-resume-page">
+    <div className="w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#050505] text-white font-sans selection:bg-[#00BFFF] selection:text-black overflow-x-hidden relative flex flex-col pb-20" id="aetrix-resume-page">
       <style>{`
         @keyframes scan-line {
           0% { top: 0%; opacity: 0.6; }
@@ -5978,7 +5978,7 @@ function PdfToolWorkspace({
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00BFFF] selection:text-black overflow-x-hidden relative flex flex-col pb-20" id="aetrix-pdf-page">
+    <div className="w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#050505] text-white font-sans selection:bg-[#00BFFF] selection:text-black overflow-x-hidden relative flex flex-col pb-20" id="aetrix-pdf-page">
       <style>{`
         @keyframes wave-flow-1 {
           0% { transform: translateX(0) translateZ(0) scaleY(1); }
@@ -6927,7 +6927,7 @@ function CodeGenToolWorkspace({
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-white font-sans selection:bg-[#00BFFF]/30 selection:text-white relative flex flex-col overflow-x-hidden" id="aetrix-code-gen-flow">
+    <div className="w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#0B0F19] text-white font-sans selection:bg-[#00BFFF]/30 selection:text-white relative flex flex-col overflow-x-hidden" id="aetrix-code-gen-flow">
       {/* Interactive CSS Animations & Matrix Background Glows */}
       <style>{`
         @keyframes rotate-slow-right {
@@ -8077,7 +8077,7 @@ function StudyToolWorkspace({
   };
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-[#00BFFF] selection:text-black relative flex flex-col overflow-x-hidden pb-24" id="study-workspace">
+    <div className="w-full h-[100dvh] max-h-[100dvh] overflow-y-auto bg-black text-white font-sans selection:bg-[#00BFFF] selection:text-black relative flex flex-col overflow-x-hidden pb-24" id="study-workspace">
       {/* Background Star grid & ambient glows */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none z-0" />
       <div className="absolute top-[20%] left-[10%] w-[400px] h-[400px] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none z-0" />

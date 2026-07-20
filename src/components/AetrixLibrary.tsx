@@ -143,7 +143,7 @@ export default function AetrixLibrary({ onBack, addToast }: AetrixLibraryProps) 
   };
 
   return (
-    <div className="absolute inset-0 w-full h-full bg-[#04060d] text-white font-sans flex flex-col overflow-y-auto select-none z-30" id="aetrix-library-screen">
+    <div className="absolute inset-0 w-full h-[100dvh] max-h-[100dvh] bg-[#04060d] text-white font-sans flex flex-col overflow-y-auto select-none z-30" id="aetrix-library-screen">
       {/* Immersive space flourishes */}
       <div className="absolute top-0 inset-x-0 h-[400px] bg-gradient-to-b from-[#0a0d18] to-transparent opacity-70 pointer-events-none" />
       <div className="absolute w-[350px] h-[350px] rounded-full bg-[#00BFFF]/5 blur-3xl -top-20 -right-20 pointer-events-none" />

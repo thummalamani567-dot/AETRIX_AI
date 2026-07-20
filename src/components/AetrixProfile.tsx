@@ -218,7 +218,7 @@ export default function AetrixProfile({
   };
 
   return (
-    <div className="absolute inset-0 w-full h-full bg-[#0B0F19] text-white font-sans flex flex-col overflow-y-auto select-none z-30" id="aetrix-profile-screen">
+    <div className="absolute inset-0 w-full h-[100dvh] max-h-[100dvh] bg-[#0B0F19] text-white font-sans flex flex-col overflow-y-auto select-none z-30" id="aetrix-profile-screen">
       {/* Dynamic Star background and glowing neon blur */}
       <div className="absolute top-0 inset-x-0 h-[450px] bg-gradient-to-b from-[#0f172a] to-transparent opacity-60 pointer-events-none" />
       <div className="absolute w-[450px] h-[450px] rounded-full bg-gradient-to-r from-[#1E90FF]/10 to-[#00BFFF]/5 blur-3xl -top-10 left-1/2 transform -translate-x-1/2 pointer-events-none" />
