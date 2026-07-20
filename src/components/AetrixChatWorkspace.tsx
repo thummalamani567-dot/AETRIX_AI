@@ -957,7 +957,7 @@ ${err.message || "An unexpected error occurred while communicating with the serv
   };
 
   return (
-    <div className="absolute inset-0 w-full h-full bg-[#000000] flex text-white font-sans overflow-hidden select-none z-10" id="aetrix-full-workspace">
+    <div className="absolute inset-0 w-full h-[100dvh] max-h-[100dvh] bg-[#000000] flex text-white font-sans overflow-hidden select-none z-10" id="aetrix-full-workspace">
       
       {/* Toast Notification Layer */}
       <div className="fixed top-6 right-6 z-50 flex flex-col gap-2.5" id="toast-overlay">
@@ -1195,13 +1195,13 @@ ${err.message || "An unexpected error occurred while communicating with the serv
       {/* ---------------------------------------------------- */}
       {/* MAIN CONTAINER (Screen 1 / 3 Layout) */}
       {/* ---------------------------------------------------- */}
-      <div className="flex-1 flex flex-col min-h-screen bg-[#000000] relative" id="aetrix-main-content">
+      <div className="flex-1 flex flex-col h-[100dvh] max-h-[100dvh] bg-[#000000] relative overflow-hidden" id="aetrix-main-content">
         
         {/* Subtle grid background */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none" />
 
         {/* Top Navbar */}
-        <header className="h-[64px] border-b border-white/10 flex items-center justify-between px-5 bg-[#000000] relative z-30 select-none">
+        <header className="h-[64px] min-h-[64px] border-b border-white/10 flex items-center justify-between px-5 bg-[#000000] relative z-30 select-none shrink-0" id="aetrix-header">
           {/* Left Menu toggle */}
           {isLoggedIn ? (
             <button 
@@ -1572,7 +1572,7 @@ ${err.message || "An unexpected error occurred while communicating with the serv
         {/* ---------------------------------------------------- */}
         {/* BOTTOM INPUT CONTAINER (Pictured in Screen 1 & 3) */}
         {/* ---------------------------------------------------- */}
-        <footer className="p-4 sm:p-6 bg-gradient-to-t from-black via-black/90 to-transparent sticky bottom-0 z-20 select-none animate-fade-in" id="aetrix-bottom-input-pane">
+        <footer className="p-4 sm:p-6 bg-gradient-to-t from-black via-black/90 to-transparent sticky bottom-0 z-20 select-none animate-fade-in shrink-0" id="aetrix-bottom-input-pane">
           <div className="max-w-3xl mx-auto">
             
             {/* Rounded grey-bordered container holding input & lower button list */}

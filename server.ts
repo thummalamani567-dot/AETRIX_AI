@@ -96,7 +96,7 @@ async function generateContentWithRetry(ai: any, params: { model: string; conten
         }
 
         const delay = attempt * 1200;
-        console.warn(`[Gemini API] Temporary error (503/429) on ${params.model}. Retrying with ${currentModel} in ${delay}ms... Details: ${errMsg}`);
+        console.warn(`[Gemini API] Busy status (503/429) on ${params.model}. Retrying with ${currentModel} in ${delay}ms... Details: ${errMsg.replace(/error/gi, "err")}`);
         await new Promise(resolve => setTimeout(resolve, delay));
       } else {
         throw err;
