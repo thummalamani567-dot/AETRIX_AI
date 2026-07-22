@@ -117,17 +117,17 @@ app.post("/api/chat", async (req, res) => {
     const selectedModel = model === "gemini-pro" ? "gemini-3.1-pro-preview" : "gemini-3.5-flash";
     const now = new Date();
 
-const currentDateTime = now.toLocaleString("en-US", {
+const currentDateTime = now.toLocaleString("en-IN", {
+  timeZone: "Asia/Kolkata",
   weekday: "long",
   year: "numeric",
   month: "long",
   day: "numeric",
-  hour: "numeric",
+  hour: "2-digit",
   minute: "2-digit",
   second: "2-digit",
   hour12: true,
-  timeZone: "Asia/Kolkata"
-}); 
+});
     const ai = getGenAI();
     if (!ai) {
       return res.status(500).json({ error: "GEMINI_API_KEY is not defined. Please check your environment variables." });
