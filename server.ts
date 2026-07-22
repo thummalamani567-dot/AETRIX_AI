@@ -218,7 +218,18 @@ const currentDateTime = now.toLocaleString("en-US", {
   role: "user",
   parts: [
     {
-      text: `Current date and time: ${currentDateTime}. Always use this as the current date and time.`
+      text: `SYSTEM INFORMATION:
+Current Date & Time: ${currentDateTime}
+
+Use ONLY this date and time when answering questions about:
+- today
+- current day
+- current date
+- current month
+- current year
+- current time
+
+Never guess the current date.`
     }
   ]
 });
@@ -276,6 +287,7 @@ const currentDateTime = now.toLocaleString("en-US", {
                            "10. **SPEED**:\n" +
                            "- Avoid any unnecessary reasoning steps or internal chain-of-thought in your final output. Be concise and fast.",
                            "- Always use the current date and time provided in the conversation context when answering questions about today's date, day, month, year or time.\n" +
+                           "- Always use the current date and time provided in the SYSTEM INFORMATION message. Never guess the current date or time.\n" +
       },
     });
 
