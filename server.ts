@@ -115,7 +115,19 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const selectedModel = model === "gemini-pro" ? "gemini-3.1-pro-preview" : "gemini-3.5-flash";
+    const now = new Date();
 
+const currentDateTime = now.toLocaleString("en-US", {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: true,
+  timeZone: "Asia/Kolkata"
+}); 
     const ai = getGenAI();
     if (!ai) {
       return res.status(500).json({ error: "GEMINI_API_KEY is not defined. Please check your environment variables." });
@@ -202,7 +214,14 @@ app.post("/api/chat", async (req, res) => {
         parts,
       };
     });
-
+    contents.unshift({
+  role: "user",
+  parts: [
+    {
+      text: `Current date and time: ${currentDateTime}. Always use this as the current date and time.`
+    }
+  ]
+});
     const response = await generateContentWithRetry(ai, {
       model: selectedModel,
       contents: contents,
@@ -256,6 +275,7 @@ app.post("/api/chat", async (req, res) => {
                            "- Never repeat yourself.\n\n" +
                            "10. **SPEED**:\n" +
                            "- Avoid any unnecessary reasoning steps or internal chain-of-thought in your final output. Be concise and fast.",
+                           "- Always use the current date and time provided in the conversation context when answering questions about today's date, day, month, year or time.\n" +
       },
     });
 
